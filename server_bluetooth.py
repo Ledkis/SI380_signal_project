@@ -6,6 +6,7 @@ Created on 6 d�c. 2013
 '''
 
 import bluetooth
+import datetime
 
 class Server_bluetooth:
     def __init__(self):
@@ -29,11 +30,11 @@ class Server_bluetooth:
         
        
         
-        print "En attente de devices..."
+        print("En attente de devices...")
         # accept incoming connections
         (client_sock, client_info) = self.server_socket.accept()
         self.client_sockets.append(client_sock)
-        print "Accepted Connection from ", client_info
+        print("Accepted Connection from ", client_info)
         self.sockets.append(client_sock)
         
         return (client_sock, client_info)
@@ -53,21 +54,43 @@ class Server_bluetooth:
         
         self.server_socket.close()
         
-        print "all done"
+        print("all done")
         
     def display_msg(self, data):
         msg = []
         for i in range(len(data)):
             msg[i] = ord(data[i])
-        print "Received : %x", msg
+        print("Received : %x", msg)
+        
+def save_data(data, file, path):
+    data = data.decode('utf-8')
+    data = data.split(";")
+    if data[0] == "gce":
+        
+        x, y, z = data[1], data[2], data[3]
+        print("gce : %s;%s;%s"%(x,y,z))
+        file.write("%s;%s;%s\n"%(x, y, z))
+    if data[0] =="bce":
+        file.close()
+        now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        file_name = path+"acc_data_"+now+".txt"
+        print("bce, new file  : %s"%(file_name))
+        file = open(file_name, "w")
             
         
 if __name__ == "__main__":
     bt_server =  Server_bluetooth()
     client_sock, client_info = bt_server.new_connexion()
+    path = "data/"
+    now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    file = open(path+"acc_data_"+now+".txt", "w")
     
-    while True:
-        data = bt_server.receive_data(client_sock)
-        print(data)
+    try:
+        while True:
+            data = bt_server.receive_data(client_sock)
+            print(data)
+            save_data(data, file, path)
+    finally:
+        file.close()
         
     bt_server.disconnect()
