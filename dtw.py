@@ -30,10 +30,15 @@ def eval_distance_matrix(s1, s2,  d_eval = lambda x,y : (x - y)**2):
     
     for i in range(mm):
         for j in range(nn):
-            #We revert s1 in order to have the origin in the bottom left corner
-            D[mm-i-1, j] = d_eval(s1[i], s2[j])
+            D[i, j] = d_eval(s1[i], s2[j])
             
     return D
+	
+def display_distance_matrix(D):
+    """Display the distance matrix with the origin in the bottom left corner.
+	"""
+    D = np.flipud(D)
+    print(D)
     
     
 	
@@ -47,5 +52,5 @@ if __name__ == "__main__":
     D2= eval_distance_matrix(s3, s1)
     
     
-    print(D1)
-    print(D2)
+    display_distance_matrix(D1)
+    display_distance_matrix(D2)
