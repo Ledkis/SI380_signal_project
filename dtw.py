@@ -35,11 +35,11 @@ def eval_distance_matrix(s1, s2,  d_eval = lambda x,y : (x - y)**2):
     return D
     
 def eval_cummuled_distance_matrix(D, r = None, warping_window = lambda i,j,r : i-r<=j<=i+r):
-    """Evaluate the cummuled distance matrix W from a distance matrix D
+    """Evaluate the cummuled distance matrix G from a distance matrix D
     
     Parameter
     D -- distance matrix
-    r -- wraping windows
+    r -- warping windows
     """
     
     #Use warping or not
@@ -48,7 +48,7 @@ def eval_cummuled_distance_matrix(D, r = None, warping_window = lambda i,j,r : i
         warp = True
     
     nn, mm = np.shape(D)
-    W = np.zeros((nn, mm))
+    G = np.zeros((nn, mm))
     
     #REM : We will use there a Symetric DTW wit warping windows and no slope constraint
     
@@ -56,19 +56,61 @@ def eval_cummuled_distance_matrix(D, r = None, warping_window = lambda i,j,r : i
         for j in range(mm):
             #Initialisation
             if i == j == 0:
-                W[i, j] = D[0, 0]
+                G[i, j] = D[0, 0]
             else:
-                if not (warp and warping_window(i, j, r)):
+                if warp and warping_window(i, j, r):
                     continue;
                 d = []
                 if i > 0:
-                    d.append(W[i-1, j] + D[i, j])
+                    d.append(G[i-1, j] + D[i, j])
                 if i > 0 and j > 0:
-                    d.append(W[i-1, j-1] + 2*D[i, j])
+                    d.append(G[i-1, j-1] + 2*D[i, j])
                 if j > 0:
-                    d.append(W[i, j-1] + D[i,j])
-                W[i,j] = min(d)
-    return W
+                    d.append(G[i, j-1] + D[i,j])
+                G[i,j] = min(d)
+    return G
+    
+def dtw(A, s, debug = False):
+    """Dtw algorithm to find from which sequence in the dict A the sequence s 
+    is the closest.
+    """
+    if debug:
+        print("------------------------")
+        print("----------DTW-----------")
+        
+    d = []
+    for ref_seq_name in A.keys():
+        
+        ref_seq = A[ref_seq_name]
+        D = eval_distance_matrix(ref_seq, s)
+        
+        G = eval_cummuled_distance_matrix(D)
+        
+        
+        nn, mm = np.shape(G)
+        
+        
+        time_normalized_dist = G[nn-1, mm-1] / (mm+nn)
+        
+        d.append((ref_seq_name, time_normalized_dist))
+        
+        if debug:
+            print(ref_seq_name)
+            print("distance_matrix : ")
+            print(D)
+            print("cummuled_distance_matrix : ")
+            print(G)
+            print("time_normalized_dist = %s"%(time_normalized_dist))
+        
+    closest_seq = min(d, key=lambda x: x[1])[0]
+    
+    if debug:
+        print("The closest seq is : %s!"%closest_seq)
+    
+    return closest_seq
+        
+        
+        
     
 	
 def display_row_inverted_matrix(D):
@@ -76,8 +118,6 @@ def display_row_inverted_matrix(D):
 	"""
     D = np.flipud(D)
     print(D)
-
-    
     
 	
 if __name__ == "__main__":
@@ -93,8 +133,13 @@ if __name__ == "__main__":
     display_row_inverted_matrix(D1)
     display_row_inverted_matrix(D2)
     
-    W1 = eval_cummuled_distance_matrix(D1, 4)
-    W2= eval_cummuled_distance_matrix(D2, 4)
+    W1 = eval_cummuled_distance_matrix(D1)
+    W2= eval_cummuled_distance_matrix(D2)
     
-    display_row_inverted_matrix(W1)
-    display_row_inverted_matrix(W2)
+    print(W1)
+    print(W2)
+    
+    A = {"s2":s2, "s3":s3}
+    
+    closest_seq = dtw(A, s1, debug = True)
+    
