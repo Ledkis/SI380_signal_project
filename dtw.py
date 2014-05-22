@@ -1,6 +1,7 @@
 # -*- encoding : utf-8 -*-
 
 import numpy as np
+import matplotlib.pylab as plt
 
 
 def eucl_dist(x, y):
@@ -98,8 +99,12 @@ def dtw(A, s, debug = False):
             print(ref_seq_name)
             print("distance_matrix : ")
             print(D)
+            
             print("cummuled_distance_matrix : ")
             print(G)
+            plt.figure()
+            plt.imshow(G)
+            plt.title("%s, distance = %s"%(ref_seq_name,time_normalized_dist ))
             print("time_normalized_dist = %s"%(time_normalized_dist))
         
     closest_seq = min(d, key=lambda x: x[1])[0]
@@ -139,7 +144,29 @@ if __name__ == "__main__":
     print(W1)
     print(W2)
     
-    A = {"s2":s2, "s3":s3}
+    nn = 100
+    rand_seq = np.random.randn(nn)
+    lin_seq = np.linspace(0, nn, nn)
     
-    closest_seq = dtw(A, s1, debug = True)
+    A = {"s2":s2, "s3":s3}
+    B = {"rand_seq":rand_seq, "lin_seq":lin_seq}
+    x1 = np.linspace(0, 100, 100)  
+    x2 = np.concatenate((np.linspace(0, 100, 50), np.linspace(100, 0, 50)))
+    y = np.linspace(0, 100, 50)  
+    C = {"x1":x1, "x2":x2}
+    closest_seq = dtw(C, y, debug = True)
+    
+#    plt.figure()
+#    x1 = np.linspace(0, 100, 100)  
+#    x2 = np.concatenate((np.linspace(0, 100, 50), np.linspace(100, 0, 50)))
+#    y = np.linspace(0, 100, 50) 
+#    plt.subplot(311)
+#    plt.plot(x1)
+#    plt.title("x1")
+#    plt.subplot(312)
+#    plt.plot(x2)
+#    plt.title("x2")
+#    plt.subplot(313)
+#    plt.plot(y)
+#    plt.title("y")
     
