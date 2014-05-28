@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">HandsOn_App_test</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    
+    <string name="Max_Fader_Value">127</string>
+    
+    <color name="accelerometer_activity_text_color">#84F2B4</color>
+    <color name="accelerometer_activity_text_color2">#000100</color>
+    <color name="accelerometer_activity_text_color3">#54CAED</color>
+    <color name="aquisition_color">#EF4A4F</color>
+    <color name="non_aquisition_color">#85FBEC</color>
+
+</resources>
