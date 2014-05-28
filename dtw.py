@@ -71,6 +71,24 @@ def eval_cummuled_distance_matrix(D, r = None, warping_window = lambda i,j,r : i
                 G[i,j] = min(d)
     return G
     
+def eval_time_normalized_dist(x, y, debug = False):
+        D = eval_distance_matrix(x, y)
+        G = eval_cummuled_distance_matrix(D)
+        nn, mm = np.shape(G)
+        time_normalized_dist = G[nn-1, mm-1] / (mm+nn)
+        
+        if debug:
+            print("distance_matrix : ")
+            print(D)
+            print("cummuled_distance_matrix : ")
+            print(G)
+            plt.figure()
+            plt.imshow(G)
+            
+        
+        return time_normalized_dist
+    
+    
 def dtw(A, s, debug = False):
     """Dtw algorithm to find from which sequence in the dict A the sequence s 
     is the closest.
@@ -83,29 +101,15 @@ def dtw(A, s, debug = False):
     for ref_seq_name in A.keys():
         
         ref_seq = A[ref_seq_name]
-        D = eval_distance_matrix(ref_seq, s)
-        
-        G = eval_cummuled_distance_matrix(D)
-        
-        
-        nn, mm = np.shape(G)
-        
-        
-        time_normalized_dist = G[nn-1, mm-1] / (mm+nn)
+        time_normalized_dist = eval_time_normalized_dist(ref_seq, s, debug = True)
         
         d.append((ref_seq_name, time_normalized_dist))
         
-        if debug:
-            print(ref_seq_name)
-            print("distance_matrix : ")
-            print(D)
-            
-            print("cummuled_distance_matrix : ")
-            print(G)
-            plt.figure()
-            plt.imshow(G)
+        if debug:        
             plt.title("%s, distance = %s"%(ref_seq_name,time_normalized_dist ))
             print("time_normalized_dist = %s"%(time_normalized_dist))
+        
+        
         
     closest_seq = min(d, key=lambda x: x[1])[0]
     
@@ -113,11 +117,102 @@ def dtw(A, s, debug = False):
         print("The closest seq is : %s!"%closest_seq)
     
     return closest_seq
-        
-        
-        
     
-	
+def multi_d_dtw(A, s, debug = False):
+    """DTW algorithme for multi dimensionnal time series
+    """
+    
+    dist_list = []
+    
+    for ref_seq_name in A.keys():
+        ref_seq = A[ref_seq_name]
+        
+        if debug:        
+            print("seq %s : "%(ref_seq_name))
+        
+        d_weight_list = []
+        for d in range(len(ref_seq)):
+            ref_seq_d = ref_seq[d]
+            s_d = s[d]
+            
+            time_normalized_dist = eval_time_normalized_dist(ref_seq_d, s_d)
+            d_weight_list.append(time_normalized_dist)
+            
+            if debug:
+                print("Dim %s : dist = %s"%(d, time_normalized_dist))
+            
+        dimentionnal_time_normalized_dist = sum(d_weight_list)
+        
+        if debug:        
+                print("dimentionnal_dist : %s"%(dimentionnal_time_normalized_dist))
+        
+        dist_list.append((ref_seq_name, dimentionnal_time_normalized_dist))
+        
+    closest_seq = min(dist_list, key=lambda x: x[1])[0]
+    
+    if debug:
+        print("The closest seq is : %s!"%closest_seq)
+    
+def multi_d_multi_key_dtw(A, s, debug = False):
+    """
+    
+    TODO : Brut force
+    """
+    
+    dist_list = []
+    
+    for ref_seq_name in A.keys():
+        ref_seq_list = A[ref_seq_name]
+        
+        if debug:        
+            print("seq %s : "%(ref_seq_name))
+            
+        seq_weight_list = []
+        i=0
+        for ref_seq in ref_seq_list:
+            
+            if debug:        
+                print("ref_seq %s : "%(i))
+        
+            d_weight_list = []
+            for d in range(len(ref_seq)):
+                ref_seq_d = ref_seq[d]
+                s_d = s[d]
+                
+                time_normalized_dist = eval_time_normalized_dist(ref_seq_d, s_d)
+                d_weight_list.append(time_normalized_dist)
+                
+                if debug:
+                    print("Dim %s : dist = %s"%(d, time_normalized_dist))
+                    
+            
+            #We take the sum all all the dimention
+            dimentionnal_time_normalized_dist = sum(d_weight_list)
+            
+            seq_weight_list.append(dimentionnal_time_normalized_dist)
+            
+            if debug:        
+                    print("dimentionnal_dist : %s"%(dimentionnal_time_normalized_dist))
+                    
+            
+         #We take the average of the different ref seq           
+        ref_seq_list_weight = sum(seq_weight_list)/len(seq_weight_list)
+        
+        if debug:        
+            print("ref_seq_list_weight : %s"%(ref_seq_list_weight))
+        
+        dist_list.append((ref_seq_name, ref_seq_list_weight))
+        
+        i+=1
+        
+    closest_seq = min(dist_list, key=lambda x: x[1])[0]
+    
+    if debug:
+        print("The closest seq is : %s!"%closest_seq)
+        
+    return closest_seq
+    
+            
 def display_row_inverted_matrix(D):
     """Display the distance matrix with the origin in the bottom left corner.
 	"""
@@ -127,46 +222,107 @@ def display_row_inverted_matrix(D):
 	
 if __name__ == "__main__":
     
-    s1 = np.array([1, 2, 2, 4, 6])
-    s2 = np.array([2, 3, 4, 5, 6, 7])
-    s3 = np.array([1, 2, 4, 4, 6, 6])
+    test = 4
     
-    D1 = eval_distance_matrix(s2, s1)
-    D2= eval_distance_matrix(s3, s1)
+    if test == 1:
+        s1 = np.array([1, 2, 2, 4, 6])
+        s2 = np.array([2, 3, 4, 5, 6, 7])
+        s3 = np.array([1, 2, 4, 4, 6, 6])
+        
+        D1 = eval_distance_matrix(s2, s1)
+        D2= eval_distance_matrix(s3, s1)
+        
+        
+        display_row_inverted_matrix(D1)
+        display_row_inverted_matrix(D2)
+        
+        W1 = eval_cummuled_distance_matrix(D1)
+        W2= eval_cummuled_distance_matrix(D2)
+        
+        print(W1)
+        print(W2)
+        
+        nn = 100
+        rand_seq = np.random.randn(nn)
+        lin_seq = np.linspace(0, nn, nn)
+        
+        A = {"s2":s2, "s3":s3}
+        B = {"rand_seq":rand_seq, "lin_seq":lin_seq}
+        x1 = np.linspace(0, 100, 100)  
+        x2 = np.concatenate((np.linspace(0, 100, 50), np.linspace(100, 0, 50)))
+        y = np.linspace(0, 100, 50)  
+        C = {"x1":x1, "x2":x2}
+        closest_seq = dtw(C, y, debug = True)
     
+    if test == 2:
+        plt.figure()
+        x1 = np.linspace(0, 100, 100)  
+        x2 = np.concatenate((np.linspace(0, 100, 50), np.linspace(100, 0, 50)))
+        y = np.linspace(0, 100, 50) 
+        plt.subplot(311)
+        plt.plot(x1)
+        plt.title("x1")
+        plt.subplot(312)
+        plt.plot(x2)
+        plt.title("x2")
+        plt.subplot(313)
+        plt.plot(y)
+        plt.title("y")
+        
+    #Multi dim DTW
+    if test == 3:
+        
+        x_d1 = np.linspace(0, 100, 100)
+        x_d2 = np.linspace(0, 100, 100)
+        x_d3 = np.linspace(0, 100, 100)
     
-    display_row_inverted_matrix(D1)
-    display_row_inverted_matrix(D2)
+        y_d1 = np.linspace(100, 0, 100)
+        y_d2 = np.linspace(100, 0, 100)
+        y_d3 = np.linspace(100, 0, 100)
+        
+        x = np.array([x_d1, x_d2, x_d3])
+        y = np.array([y_d1, y_d2, y_d3])
+        
+        A = {"x" : x, "y" : y}
+        
+        
+        multi_d_dtw(A, x,  debug=True) 
+        
+    #Multi dim multi key DTW
+    if test == 4:
+        
+        x1_d1 = np.linspace(0, 100, 100)
+        x1_d2 = np.linspace(0, 100, 100)
+        x1_d3 = np.linspace(0, 100, 100)
+        
+        x2_d1 = np.linspace(0, 200, 100)
+        x2_d2 = np.linspace(0, 200, 100)
+        x2_d3 = np.linspace(0, 200, 100)
     
-    W1 = eval_cummuled_distance_matrix(D1)
-    W2= eval_cummuled_distance_matrix(D2)
-    
-    print(W1)
-    print(W2)
-    
-    nn = 100
-    rand_seq = np.random.randn(nn)
-    lin_seq = np.linspace(0, nn, nn)
-    
-    A = {"s2":s2, "s3":s3}
-    B = {"rand_seq":rand_seq, "lin_seq":lin_seq}
-    x1 = np.linspace(0, 100, 100)  
-    x2 = np.concatenate((np.linspace(0, 100, 50), np.linspace(100, 0, 50)))
-    y = np.linspace(0, 100, 50)  
-    C = {"x1":x1, "x2":x2}
-    closest_seq = dtw(C, y, debug = True)
-    
-#    plt.figure()
-#    x1 = np.linspace(0, 100, 100)  
-#    x2 = np.concatenate((np.linspace(0, 100, 50), np.linspace(100, 0, 50)))
-#    y = np.linspace(0, 100, 50) 
-#    plt.subplot(311)
-#    plt.plot(x1)
-#    plt.title("x1")
-#    plt.subplot(312)
-#    plt.plot(x2)
-#    plt.title("x2")
-#    plt.subplot(313)
-#    plt.plot(y)
-#    plt.title("y")
+        y1_d1 = np.linspace(100, 0, 100)
+        y1_d2 = np.linspace(100, 0, 100)
+        y1_d3 = np.linspace(100, 0, 100)
+        
+        y2_d1 = np.linspace(100, 0, 100)
+        y2_d2 = np.linspace(200, 0, 100)
+        y2_d3 = np.linspace(200, 0, 100)
+        
+        x1 = np.array([x1_d1, x1_d2, x1_d3])
+        x2 = np.array([x2_d1, x2_d2, x2_d3])
+        y1 = np.array([y1_d1, y1_d2, y1_d3])
+        y2 = np.array([y2_d1, y2_d2, y2_d3])
+        
+        x = np.array([x1, x2])
+        y = np.array([y1, y2])
+        
+        A = {"x" : x, "y" : y}
+        
+        z_d1 = np.linspace(24, 100, 50)
+        z_d2 = np.linspace(0, 100, 90)
+        z_d3 = np.linspace(-20, 50, 60)
+        
+        z = np.array([z_d1, z_d2, z_d3])
+        
+        
+        multi_d_multi_key_dtw(A, z, debug=True) 
     
