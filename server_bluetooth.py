@@ -5,11 +5,13 @@ Created on 6 d�c. 2013
 @author: Utilisateur
 '''
 
+import m_log as Log
+
 import bluetooth
 import datetime
 
 class Server_bluetooth:
-    def __init__(self):
+    def __init__(self, debug = False):
         
         
         self.server_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
@@ -26,15 +28,19 @@ class Server_bluetooth:
         self.server_socket.listen(1)
         bluetooth.advertise_service(self.server_socket, "Validation Host",service_id = self.uuid, service_classes = [self.uuid, bluetooth.SERIAL_PORT_CLASS ], profiles = [ bluetooth.SERIAL_PORT_PROFILE ])
         
+        self.debug = debug
+        self.TAG = "Server_bluetooth"
+        Log.d(self.TAG, "Initialized", self.debug)
+        
     def new_connexion(self):
         
        
         
-        print("En attente de devices...")
+        Log.d(self.TAG, "En attente de devices...", self.debug)
         # accept incoming connections
         (client_sock, client_info) = self.server_socket.accept()
         self.client_sockets.append(client_sock)
-        print("Accepted Connection from ", client_info)
+        Log.d(self.TAG, "Accepted Connection from %s"%(str(client_info)), self.debug)
         self.sockets.append(client_sock)
         
         return (client_sock, client_info)
