@@ -31,12 +31,18 @@ class Gesture_database_manager():
         
         self.init_from_file()
         
+        self.tcheck_database()
+        
         
     def new_gesture(self, gesture_name, gesture_list):
         """
         
         TODO : Brut force
         """
+        
+        if len(gesture_list) == 0 :
+                Log.d(self.TAG, "The new gesture '%s' contain no data -> not saved"%gesture_name, self.debug)
+                return
         
         g_l = []
         
@@ -49,6 +55,10 @@ class Gesture_database_manager():
                 x_d.append(data[0])
                 y_d.append(data[1])
                 z_d.append(data[2])
+                
+            if not (x_d and y_d and z_d):
+                Log.d(self.TAG, "One of the gesture acc is empty -> Gesture %s not saved"%gesture_name, self.debug)
+                return
                 
             x_d = np.array(x_d)
             y_d = np.array(y_d)
@@ -124,17 +134,55 @@ class Gesture_database_manager():
             g_l = np.array(g_l)
             
             self.gesture_dict[gesture_name] = g_l
+            
+    def tcheck_database(self):
+        """See if there is not appropriate gesture.
+        """
         
-
+        bad_gesture_list = []
+        for gesture_name in self.gesture_dict.keys():
+            ref_gesture = self.gesture_dict[gesture_name]
+            
+            if len(ref_gesture) ==0:
+               bad_gesture_list.append(gesture_name)
+               Log.d(self.TAG, "The gesture '%s' was not correct : empty"%gesture_name, self.debug) 
+               continue
+            
+            for gesture in ref_gesture:
+                
+                x = gesture[0]
+                y = gesture[1]
+                z = gesture[2]
+                
+                if not (x and y and z):
+                    bad_gesture_list.append(gesture_name)
+                    Log.d(self.TAG, "The gesture '%s' was not correct : one of the gesture acc is empty"%gesture_name, self.debug)
+                    break
+                
+        for gesture_name in bad_gesture_list:
+            self.remove_gesture(gesture_name)
+            
+        self.save()
+                    
+    def remove_gesture(self, gesture_name):
+        del self.gesture_dict[gesture_name]
+        Log.d(self.TAG, "%s removed from gesture data base"%gesture_name, self.debug)
         
+    def remove_all_gestures(self):
+        self.gesture_dict.clear()
+        Log.d(self.TAG, "All gestures removed from gesture data base", self.debug)
         
         
         
     def gesture_recognition(self, gesture):
+        """
+        Return None is problem
+        """
         
         if len(self.gesture_dict) == 0:
             Log.d(self.TAG, "No gesture in data base", self.debug)
             return
+        
         
         x_d = []            
         y_d = []            
@@ -153,3 +201,5 @@ class Gesture_database_manager():
         gesture_name = dtw.multi_d_multi_key_dtw(self.gesture_dict, g)
         
         Log.d(self.TAG, "New gesture recognized : %s"%gesture_name, self.debug)
+        
+        return gesture_name
