@@ -1,5 +1,7 @@
 # -*- encoding : utf-8 -*-
 
+import m_log as Log
+
 import numpy as np
 import matplotlib.pylab as plt
 
@@ -163,6 +165,10 @@ def multi_d_multi_key_dtw(A, s, debug = False):
     
     for ref_seq_name in A.keys():
         ref_seq_list = A[ref_seq_name]
+        
+        if len(ref_seq_list) == 0:
+            Log.d("[multi_d_multi_key_dtw]", "ref_seq_list is empty, no match possible", debug)
+            return None
         
         if debug:        
             print("seq %s : "%(ref_seq_name))
