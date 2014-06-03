@@ -10,6 +10,7 @@ import dtw
 import m_log as Log
 
 import numpy as np
+import threading
 
 PATH = "gesture_data_base/"
 FILE_NAME = "gesture_data_base.txt"
@@ -32,6 +33,8 @@ class Gesture_database_manager():
         self.init_from_file()
         
         self.tcheck_database()
+        
+        self.last_gesture_name = None
         
         
     def new_gesture(self, gesture_name, gesture_list):
@@ -154,7 +157,7 @@ class Gesture_database_manager():
                 y = gesture[1]
                 z = gesture[2]
                 
-                if not (x and y and z):
+                if not (x.any() and y.any() and z.any()): #TODO : Not sure about that
                     bad_gesture_list.append(gesture_name)
                     Log.d(self.TAG, "The gesture '%s' was not correct : one of the gesture acc is empty"%gesture_name, self.debug)
                     break
@@ -179,11 +182,15 @@ class Gesture_database_manager():
         Return None is problem
         """
         
+        #TODO : review the good gesture condition
         if len(self.gesture_dict) == 0:
             Log.d(self.TAG, "No gesture in data base", self.debug)
             return
-        
-        
+            
+        if len(gesture) == 0:
+           Log.d(self.TAG, "No data in gesture : ", self.debug)
+           return 
+            
         x_d = []            
         y_d = []            
         z_d = []
@@ -198,8 +205,14 @@ class Gesture_database_manager():
         z_d = np.array(z_d)
         g = np.array([x_d, y_d, z_d])
         
-        gesture_name = dtw.multi_d_multi_key_dtw(self.gesture_dict, g)
+        def perform_recognition(self, gesture_dict, gesture):
+            gesture_name = dtw.multi_d_multi_key_dtw(gesture_dict, gesture)
+            self._set_last_gesture_name(gesture_name)
+            
+        threading.Thread(None, perform_recognition, None, (self, self.gesture_dict, g), None).start()
         
-        Log.d(self.TAG, "New gesture recognized : %s"%gesture_name, self.debug)
         
-        return gesture_name
+    def _set_last_gesture_name(self, gesture_name):
+        self.last_gesture_name = gesture_name
+        Log.d(self.TAG, "New gesture recognized : %s"%self.last_gesture_name, self.debug)
+            
