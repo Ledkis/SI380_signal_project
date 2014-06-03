@@ -25,13 +25,6 @@
             android:layout_weight= "0.8"
             android:text="Continuous recognition" />
 
-    <Button
-        android:id="@+id/apprentissage_button"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_weight= "0.8"
-        android:text="Learn new gesture" />
-
 
         <EditText
             android:id="@+id/gesture_name_edittext"
@@ -40,6 +33,13 @@
             android:layout_weight= "0.8"
             android:hint="enter gesture name"
             />
+
+        <Button
+            android:id="@+id/apprentissage_button"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight= "0.8"
+            android:text="Learn new gesture" />
 
     </LinearLayout>
 
