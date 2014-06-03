@@ -170,7 +170,7 @@ class User(threading.Thread):
                  
                  
                 if self.continuous_mode:
-                    self.eval_gesture_state(self.acc_values)
+                    self.eval_gesture_state()
                     if self.gesture_mode:
                         self.gesture.append(self.acc_values)
                     
@@ -226,7 +226,7 @@ class User(threading.Thread):
                 self.gesture = []
                 
     
-    def eval_gesture_state(self, acc_values, strong = True):
+    def eval_gesture_state(self, strong = True):
         self.update_acc_buff(self.acc_values[0:3])
         state = self._tcheck_mouvment()
         if strong:        
@@ -244,7 +244,14 @@ class User(threading.Thread):
                 gesture_cond = (move_length == MIN_GESTURE_DETECTION_SEUIL)
                 if gesture_cond:
                     self.set_gesture_mode(True)
+                    # We add the acceleration values used to switch in gesture mode
+                    for i in range(MIN_GESTURE_DETECTION_SEUIL):
+                        acc = self.acc_buff[:, BUFF_LEN-MIN_GESTURE_DETECTION_SEUIL+i -1]
+                        self.gesture.append(acc)
                     self.acc_values[3] = 1 #Red
+                    
+                    #TODO : Creat a function to color the MIN_GESTURE_DETECTION_SEUIL
+                    # points who used for the swich in gesture mode
             
         else:
             self.set_gesture_mode(state == 1)
