@@ -18,6 +18,7 @@ public class Control_listener implements OnClickListener, SensorEventListener {
 
     // Some flags
 	boolean gesture_f = false;
+	boolean continuous_mode_f = false;
 	boolean apprentissage_f = false;
 
 	public Control_listener(Control_activity control_activity) {
@@ -65,6 +66,19 @@ public class Control_listener implements OnClickListener, SensorEventListener {
                 gesture_f = true;
 			}
 			break;
+
+            case R.id.continuous_recognition_button:
+                if (continuous_mode_f) {
+                    control_activity.getContinuous_recognition_button().setBackgroundColor(control_activity.getResources().getColor(R.color.aquisition_color));
+                    continuous_mode_f = false;
+                    send("end_continuous\n");
+
+                } else {
+                    control_activity.getContinuous_recognition_button().setBackgroundColor(control_activity.getResources().getColor(R.color.non_aquisition_color));
+                    continuous_mode_f = true;
+                    send("start_continuous\n");
+                }
+                break;
 
 		case R.id.apprentissage_button:
 			if (apprentissage_f) {

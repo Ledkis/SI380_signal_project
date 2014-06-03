@@ -18,6 +18,13 @@
         android:text="gesture" />
 
 
+        <Button
+            android:id="@+id/continuous_recognition_button"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight= "0.8"
+            android:text="Continuous recognition" />
+
     <Button
         android:id="@+id/apprentissage_button"
         android:layout_width="fill_parent"

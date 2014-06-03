@@ -25,6 +25,7 @@ public class Control_activity extends Activity {
 	
 	/*Référence sur le gce actionners*/
 	private Button gce_button;
+	private Button continuous_recognition_button;
 	private Button apprentissage_button;
 
     /*Référence sur gesture_name_edittext*/
@@ -61,6 +62,8 @@ public class Control_activity extends Activity {
 		/*initialisation de gce actionner*/
 		gce_button = (Button) findViewById(R.id.gce_button);
 
+        continuous_recognition_button = (Button) findViewById(R.id.continuous_recognition_button);
+
         apprentissage_button = (Button) findViewById(R.id.apprentissage_button);
 
         gesture_name_edittext = (EditText) findViewById(R.id.gesture_name_edittext);
@@ -72,6 +75,7 @@ public class Control_activity extends Activity {
 		
 		/*Pour le gce actionners*/
 		gce_button.setOnClickListener(control_listener);
+        continuous_recognition_button.setOnClickListener(control_listener);
         apprentissage_button.setOnClickListener(control_listener);
 
 	}
@@ -117,7 +121,11 @@ public class Control_activity extends Activity {
 		return gce_button;
 	}
 
-	public Button getApprentissage_button() {
+    public Button getContinuous_recognition_button() {
+        return continuous_recognition_button;
+    }
+
+    public Button getApprentissage_button() {
 		return apprentissage_button;
 	}
 
