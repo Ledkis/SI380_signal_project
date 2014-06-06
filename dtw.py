@@ -165,21 +165,26 @@ def multi_d_multi_key_dtw(A, s, debug = False):
     
     for ref_seq_name in A.keys():
         ref_seq_list = A[ref_seq_name]
+        Log.d("[multi_d_multi_key_dtw]", "ref_gesture_name : %s"%ref_seq_name, True)
         
         if len(ref_seq_list) == 0:
-            Log.d("[multi_d_multi_key_dtw]", "ref_seq_list is empty, no match possible", debug)
+            Log.d("[multi_d_multi_key_dtw]", "ref_seq_list is empty, no match possible", True)
             return None
         
         if debug:        
             print("seq %s : "%(ref_seq_name))
             
-        seq_weight_list = []
+        
+        
+        # For each ref seq        
         i=0
+        seq_weight_list = []
         for ref_seq in ref_seq_list:
             
             if debug:        
                 print("ref_seq %s : "%(i))
         
+            # For each dimention            
             d_weight_list = []
             for d in range(len(ref_seq)):
                 ref_seq_d = ref_seq[d]
@@ -192,24 +197,25 @@ def multi_d_multi_key_dtw(A, s, debug = False):
                     print("Dim %s : dist = %s"%(d, time_normalized_dist))
                     
             
-            #We take the sum all all the dimention
-            dimentionnal_time_normalized_dist = sum(d_weight_list)
+            # We take the sum all all the dimention
+            multi_d_time_normalized_dist = sum(d_weight_list)
             
-            seq_weight_list.append(dimentionnal_time_normalized_dist)
+            seq_weight_list.append(multi_d_time_normalized_dist)
             
             if debug:        
-                    print("dimentionnal_dist : %s"%(dimentionnal_time_normalized_dist))
+                print("dimentionnal_dist : %s"%(multi_d_time_normalized_dist))
+            Log.d("[multi_d_multi_key_dtw]", "ref gesture n°%s : dist = %s\n"%(i, multi_d_time_normalized_dist), True)
+            i+=1
                     
             
-         #We take the average of the different ref seq           
-        ref_seq_list_weight = sum(seq_weight_list)/len(seq_weight_list)
+        # We take the average min the different ref seq           
+        ref_seq_list_weight = min(seq_weight_list)
         
         if debug:        
             print("ref_seq_list_weight : %s"%(ref_seq_list_weight))
         
         dist_list.append((ref_seq_name, ref_seq_list_weight))
         
-        i+=1
         
     closest_seq = min(dist_list, key=lambda x: x[1])[0]
     
