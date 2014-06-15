@@ -14,6 +14,8 @@ import threading
 import numpy as np
 import pygame
 
+MAX_SIG = 10
+
 
 BACKGROUND_COLOR = (255, 255, 255)
 
@@ -38,14 +40,15 @@ class Signal_Monitor(threading.Thread):
         self.clock = pygame.time.Clock()
         self.done = False
         
-    def init_data_ref(self, data_ref):
-        self.values = data_ref
+    def init_ref(self, sig_val_ref, sig_color_ref):
+        self.sig_val = sig_val_ref
+        self.sig_color = sig_color_ref
         
     def run(self):
     
         while not self.done:
             self.clock.tick(FRAMERATE)
-            self.monitor.draw(self.values)
+            self.monitor.draw(self.sig_val, self.sig_color)
         
 class Signal_Display():
     def __init__(self, monitor, width_px, height_px, debug = True):
@@ -57,7 +60,7 @@ class Signal_Display():
         self.height = height_px
         
         
-        self.acc_val = np.zeros((4, self.width), dtype=int)
+        self.sig_val = np.zeros((MAX_SIG, self.width), dtype=int)
         
         self.max_height = self.height/6   
         self.x_ord = int(self.height/6)
@@ -75,20 +78,30 @@ class Signal_Display():
         Log.d(self.TAG, "Initialized", self.debug)
         
         
-    def update_data(self, acc_val):
+    def update_data(self, sig_val):
         
+        sig_size = len(sig_val)
+         
         for i in range(1, self.width):
-            self.acc_val[:, i-1] = self.acc_val[:, i]
-          
-          
-        self.acc_val[:, -1] = self.remap_acc(acc_val)
+            self.sig_val[:, i-1] = self.sig_val[:, i]
+        self.sig_val[:sig_size, -1] = self.remap_sig(sig_val)
         
-    def remap_acc(self, acc_val):
+    def remap_sig(self, sig_val):
         fmap = lambda val : int(m_map(val, MIN_VAL, MAX_VAL, -self.max_height, self.max_height))
-        return [fmap(acc) for acc in acc_val[0:3]]+[int(acc_val[3])]
+        return [fmap(sig) for sig in sig_val]
           
+    def eval_sig_ord(self, sig_nbr):
+        max_height = self.height/(2*sig_nbr)
+        return [int((2*i+1)*max_height) for i in range(sig_nbr)]        
+            
         
-    def draw(self, acc_val):
+    def draw(self, sig_val, sig_color):
+        
+        sig_nbr = len(sig_val)
+        
+        ord_list = self.eval_sig_ord(sig_nbr)
+            
+        
         
         if not self.monitor.done:
         
@@ -99,25 +112,17 @@ class Signal_Display():
                     self.monitor.done = True
             
            
-            self.update_data(acc_val)
-           
+            self.update_data(sig_val)
+            
             for i in range(self.width):
-                #Color:
-                c = NO_GESTURE_POINT_COLOR
-                c_val = self.acc_val[3, i]
-                if c_val == 0:
-                    c = NO_GESTURE_POINT_COLOR
-                elif c_val ==1:
-                    c = GESTURE_POINT_COLOR
-                #x data
-                x_acc_pos = (i, self.x_ord + self.acc_val[0, i])
-                pygame.draw.circle(self.surface, c, x_acc_pos, POINT_RADIUS, POINT_WIDTH)       
-                #y data
-                y_acc_pos = (i, self.y_ord + self.acc_val[1, i])
-                pygame.draw.circle(self.surface, c, y_acc_pos, POINT_RADIUS,  POINT_WIDTH)       
-                #z data
-                z_acc_pos = (i, self.z_ord + self.acc_val[2, i])
-                pygame.draw.circle(self.surface, c, z_acc_pos, POINT_RADIUS, POINT_WIDTH)
+                for s in range(sig_nbr):
+                    c = sig_color[s]
+                    if c == 0 :
+                        c = NO_GESTURE_POINT_COLOR
+                    elif c == 1 :
+                        c = GESTURE_POINT_COLOR
+                    sig_pos = (i, ord_list[s]+self.sig_val[s, i])
+                    pygame.draw.circle(self.surface, c, sig_pos, POINT_RADIUS, POINT_WIDTH)       
     
             pygame.display.flip()
             
@@ -126,9 +131,10 @@ def m_map(x, current_min, current_max, target_min, target_max):
             
 if __name__ == "__main__":
     
-    monitor = Signal_Monitor(500, 100)
-    values = [0, 0, 0, 1]    
-    monitor.init_data_ref(values)
+    monitor = Signal_Monitor(500, 200)
+    values = [0, 0, 0, 0]
+    colors = [1, 0, 1, 0]    
+    monitor.init_ref(values, colors)
     monitor.start()
     
     
