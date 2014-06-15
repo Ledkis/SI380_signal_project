@@ -60,6 +60,10 @@ class Signal_Monitor(Process):
                 if event.type == pygame.locals.QUIT:
                     self.done = True
                     break
+                if event.type == pygame.locals.VIDEORESIZE:
+                    self.width_px, self.height_px = event.size
+                    self.surface = pygame.display.set_mode((self.width_px, self.height_px),
+                                                           pygame.locals.RESIZABLE)
             try:            
                 sig_val, sig_color = self.queue.get(1/FRAMERATE)
                 self.surface.fill(BACKGROUND_COLOR)
