@@ -10,12 +10,12 @@ Created on Sun Jun  1 21:50:40 2014
 import m_log as Log
 
 
-import threading
+from multiprocessing import Process, Queue, TimeoutError
 import numpy as np
 import pygame
+import pygame.locals
 
 MAX_SIG = 10
-
 
 BACKGROUND_COLOR = (255, 255, 255)
 
@@ -31,47 +31,51 @@ POINT_WIDTH = 0
 
 FRAMERATE = 50
 
-class Signal_Monitor(threading.Thread):
-    def __init__(self, width_px, height_px):
-        threading.Thread.__init__(self)
-        pygame.init()
+class Signal_Monitor(Process):
+    def __init__(self, width_px, height_px, title = None):
+        super(Signal_Monitor, self).__init__()
+        self.title = title
+        self.width_px, self.height_px = width_px, height_px
         
-        self.monitor = Signal_Display(self, width_px, height_px)
-        self.clock = pygame.time.Clock()
-        self.done = False
-        
-    def init_ref(self, sig_val_ref, sig_color_ref):
-        self.sig_val = sig_val_ref
-        self.sig_color = sig_color_ref
+    def init_queue(self, queue):
+        self.queue = queue
         
     def run(self):
-    
-        while not self.done:
-            self.clock.tick(FRAMERATE)
-            self.monitor.draw(self.sig_val, self.sig_color)
         
-class Signal_Display():
-    def __init__(self, monitor, width_px, height_px, debug = True):
+        pygame.init()
         
-        
-        self.monitor = monitor
-        
-        self.width = width_px
-        self.height = height_px
-        
-        
-        self.sig_val = np.zeros((MAX_SIG, self.width), dtype=int)
-        
-        self.max_height = self.height/6   
-        self.x_ord = int(self.height/6)
-        self.y_ord = 3*self.x_ord
-        self.z_ord = 5*self.x_ord
-        
-        self.surface = pygame.display.set_mode((self.width, self.height))
+        self.surface = pygame.display.set_mode((self.width_px, self.height_px), pygame.locals.RESIZABLE)
+        if self.title is not None:
+            pygame.display.set_caption(self.title)
         self.surface.fill(BACKGROUND_COLOR)
         pygame.display.flip()
         
+        self.clock = pygame.time.Clock()
+        self.done = False
         
+        self.monitor = Signal_Display(self)
+    
+        while not self.done:
+            for event in pygame.event.get():
+                if event.type == pygame.locals.QUIT:
+                    self.done = True
+                    break
+            try:            
+                sig_val, sig_color = self.queue.get(1/FRAMERATE)
+                self.surface.fill(BACKGROUND_COLOR)
+                self.monitor.draw(sig_val, sig_color)
+                pygame.display.flip()                
+                
+            except TimeoutError:
+                pass
+            
+        pygame.quit()
+        
+class Signal_Display():
+    def __init__(self, monitor, debug = True):
+        self.monitor = monitor
+        
+        self.sig_val = np.zeros((MAX_SIG, self.monitor.width_px), dtype=int)
         
         self.debug = debug
         self.TAG = "Signal_Monitor"
@@ -79,10 +83,9 @@ class Signal_Display():
         
         
     def update_data(self, sig_val):
-        
         sig_size = len(sig_val)
          
-        for i in range(1, self.width):
+        for i in range(1, self.monitor.width_px):
             self.sig_val[:, i-1] = self.sig_val[:, i]
         self.sig_val[:sig_size, -1] = self.remap_sig(sig_val)
         
@@ -91,30 +94,22 @@ class Signal_Display():
         return [fmap(sig) for sig in sig_val]
           
     def eval_sig_ord(self, sig_nbr):
-        max_height = self.height/(2*sig_nbr)
-        return [int((2*i+1)*max_height) for i in range(sig_nbr)]        
-            
+        self.max_height = self.monitor.height_px/(2*sig_nbr)
+        return [int((2*i+1)*self.max_height) for i in range(sig_nbr)]        
         
     def draw(self, sig_val, sig_color):
-        
         sig_nbr = len(sig_val)
         
-        ord_list = self.eval_sig_ord(sig_nbr)
-            
+        if sig_nbr == 0:
+            Log.d(self.TAG, "No signal to display", self.debug)
+            return
         
+        ord_list = self.eval_sig_ord(sig_nbr)
         
         if not self.monitor.done:
-        
-            self.surface.fill(BACKGROUND_COLOR)
-            
-            for event in pygame.event.get():
-                if (event.type == pygame.QUIT):
-                    self.monitor.done = True
-            
-           
             self.update_data(sig_val)
             
-            for i in range(self.width):
+            for i in range(self.monitor.width_px):
                 for s in range(sig_nbr):
                     c = sig_color[s]
                     if c == 0 :
@@ -122,9 +117,7 @@ class Signal_Display():
                     elif c == 1 :
                         c = GESTURE_POINT_COLOR
                     sig_pos = (i, ord_list[s]+self.sig_val[s, i])
-                    pygame.draw.circle(self.surface, c, sig_pos, POINT_RADIUS, POINT_WIDTH)       
-    
-            pygame.display.flip()
+                    pygame.draw.circle(self.monitor.surface, c, sig_pos, POINT_RADIUS, POINT_WIDTH)       
             
 def m_map(x, current_min, current_max, target_min, target_max):
     return ((target_max-target_min)/(current_max-current_min))*x+((current_min*target_max-target_min*current_max)/(current_min-current_max))  
@@ -132,16 +125,20 @@ def m_map(x, current_min, current_max, target_min, target_max):
 if __name__ == "__main__":
     
     monitor = Signal_Monitor(500, 200)
-    values = [0, 0, 0, 0]
-    colors = [1, 0, 1, 0]    
-    monitor.init_ref(values, colors)
-    monitor.start()
+    queue = Queue()
+    monitor.init_queue(queue)
     
+    values = [0, 0, 0, 0]
+    colors = [1, 0, 1, 0]
+    
+    queue.put((values, colors))   
+    
+    monitor.start()
     
     i = 0
     while True:
         values[0] = i%10
         values[1] = i%10  
-        
         i +=1
+        queue.put((values, colors))
        
