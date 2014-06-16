@@ -28,33 +28,33 @@ def Data_design(A,debug=False):
     return (labels, Proto, Protoclass)
 
 # K-NN ~1-KNN
-def K_NN(X, A, K = 1, debug = False):    
+def K_NN(X, A, K, debug = False):    
     # Data laoding
     labels, Proto, Protoclass = Data_design(A,True)
-     
     d_min = []
     h = len(Proto)
     m,n = np.shape(X)
-    
+    mydict = []
     # Calcul, distances min
     for i in range(h):
         m1,n1 = np.shape(Proto[i])
         r = np.fabs(np.fabs(n-n1) - min(n,n1))# this value Need to study for better results
         dm,pth,dis = cv.DTW(X, Proto[i], r)
+        mydict.append((Protoclass[i],dm))
         d_min.append(dm)
     # Classification
     if K==1:
         index = np.argmin(d_min)
         Xclass = Protoclass[index]
     else:
-        mydict = {key:value for key,value in zip(Protoclass,d_min)}
         # Classification
-        S = sorted(mydict.items(), key=lambda t:t[1])
+        S = sorted(mydict, key=lambda t:t[1])
         S = S[0:K]
         nClass = len(labels)
         classcount = []
         for i in range(nClass):
-            x = map(lambda j: labels[i]==j, S.keys())
+            x = map(lambda j: labels[i]==j, S[0])
             classcount.append(np.sum(x))
         Xclass = np.argmax(classcount)
+        Xclass = labels[Xclass]
     return Xclass         
