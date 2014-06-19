@@ -6,20 +6,30 @@ Created on Tue May 27 15:40:24 2014
 """
 
 import m_log as Log
-import input_data_display
+from input_data_display import Signal_Monitor
+import m_buffer
+import m_treatment
 
 import sys
+import time
 import traceback
 import threading
 
+from multiprocessing import Queue
+
 import numpy as np
+
+G_CONST = 9.81
 
 # Space between for the information for log
 SPACE = 15
 # Length of the buffer witch contains the accelerometers values
-BUFF_LEN = 5
+BUFF_LEN = 15
 # Length of the mouvment state buffer 
 STATE_BUFF_LEN = 10
+
+NORM_BUFF_LEN = 15
+
 # Seuil under witch we say there is no movement
 GESTURE_SEUIL = 0.8
 # Min number of consecutive 1 mouvment state for switching in gesture mode
@@ -34,10 +44,9 @@ class User_manager():
         
         self.gesture_database_manager = gesture_database_manager
         
-        self.user_list = []
+        self.acc_treatment = m_treatment.Data_Treatment()
         
-        # Pygame object for ploting incoming accelerometer values
-        self.monitor = input_data_display.Signal_Monitor(500, 500)
+        self.user_list = []
         
         self.debug = debug
         self.TAG = "User_manager"
@@ -95,6 +104,14 @@ class User(threading.Thread):
         # Represent if the user is working or not
         self.done = False
         
+        # Pygame object for ploting incoming accelerometer values
+        self.queue = Queue()
+        
+#        launcher = lambda queue : User_Signal_Monitor(queue, user_name="user monitor").start()
+#        threading.Thread(None, launcher, None, args = (self.queue, )).start()
+        
+        User_Signal_Monitor(self.queue).start()
+
         self.debug = True
         self.TAG = "User %s"%(self.name)
         Log.d(self.TAG, "New user : %s"%self.name, self.debug)
@@ -104,7 +121,14 @@ class User(threading.Thread):
         
         
         # Buffer witch contains the last BUFF_LEN accelerometer values
-        self.acc_buff = np.zeros((3, BUFF_LEN))
+        self.acc_buff = m_buffer.Buff(3, BUFF_LEN)
+        
+        self.norm_buff = m_buffer.Buff(1, BUFF_LEN)        
+        self.norm_2_buff = m_buffer.Buff(1, BUFF_LEN)        
+        self.norm_3_buff = m_buffer.Buff(1, BUFF_LEN)        
+        self.v_x_buff = m_buffer.Buff(1, BUFF_LEN)        
+        self.x_p_buff = m_buffer.Buff(1, BUFF_LEN)        
+        
         # List witch contains the accelerometer values of the gesture currently performed gesture
         self.gesture = []
         # List witch contains the list of gesture associated to a new gesture
@@ -113,15 +137,22 @@ class User(threading.Thread):
         # Buffer witch contains the last STATE_BUFF_LEN mouvment state
         self.mouvment_state_buff = np.zeros((1, STATE_BUFF_LEN))
         
-        # Reference to the accelerometer value x, y, z. The last one represent
-        # if we are in gesture mode or not (we use this for adapting the color
-        # of the dot in the monitor)
-        self.acc_values  = [0, 0, 0, 0]
+        # Reference to the accelerometer value x, y, z
+        self.acc_values  = [0, 0, 0]
         
-        # We give the reference of the accelerometer values to the monitor
-        self.manager.monitor.init_data_ref(self.acc_values)
-        self.manager.monitor.start()
+        # represent the different signals we want to display
+        self.sig_val = []
+        # Represent the color of the displayed signals.
+        self.sig_colors  = []
         
+        
+        self.queue.put((self.sig_val, self.sig_colors))
+        
+        import test_display
+        test_display.launch_pyg(self.queue)
+        
+        time.clock()
+        Log.d(self.TAG, "Start loop", self.debug)
         while not self.done:
             try:
                 # Data reception
@@ -137,7 +168,6 @@ class User(threading.Thread):
                 traceback.print_exc()
                
         Log.d(self.TAG, "End run", self.debug)
-               
             
                 
     def _data_treatment(self, in_data):
@@ -168,15 +198,18 @@ class User(threading.Thread):
                     traceback.print_exc()
                     return
                  
-                 
                 if self.continuous_mode:
-                    self.eval_gesture_state()
-                    if self.gesture_mode:
-                        self.gesture.append(self.acc_values)
-                    
+                    self.continuous_recognition()
+                    if self.app_mode:
+                        self.app_mode = False
+                        Log.d(self.TAG, "No apprenntissage in continuous mode", self.debug)
+                        
                 else:
                     self.gesture.append(self.acc_values)
-                    self.acc_values[3] = 1 #Red
+                    self.sig_val = self.acc_values
+                    self.sig_colors = [1]*3 #Red
+                    self.queue.put((self.sig_val, self.sig_colors))                    
+                                        
                     #self._display_acc(self.acc_values, "[%s]"%msg)
                 
             # When we switch in apprentissage mode
@@ -207,15 +240,13 @@ class User(threading.Thread):
             # When we quit continuous mode
             if msg == "end_continuous":
                 self.continuous_mode = False
-                # We start a nex gesture recongnition with the current gesture
-                self.gesture_database_manager.gesture_recognition(self.gesture)
                 # we clear the accelerometer values in the gesture
                 self.gesture = []
                 Log.d(self.TAG, "End Continuous mode", self.debug)
             
             # When we stop to receive acceleromter data
             if msg == "end_data":
-                self.acc_values[3] = 0 #Black
+                self.sig_colors = [0]*3 #Black
                 Log.d(self.TAG, "End data", self.debug)
                 # We tcheck if we where in app mode or not
                 if self.app_mode:
@@ -225,87 +256,23 @@ class User(threading.Thread):
                 # We don't forget to clear the current gesture
                 self.gesture = []
                 
+                # We clear the queue
+                while not self.queue.empty():
+                    self.queue.get()
+                
     
-    def eval_gesture_state(self, strong = True):
-        self.update_acc_buff(self.acc_values[0:3])
-        state = self._tcheck_mouvment()
-        if strong:        
+    def continuous_recognition(self):
         
-            self.update_mouvment_state_buff(state)
-            if self.gesture_mode:
-                no_move_length = np.sum(self.mouvment_state_buff[:,-MIN_NO_GESTURE_DETECTION_SEUIL:])
-                no_gesture_cond = (no_move_length == -MIN_NO_GESTURE_DETECTION_SEUIL)
-                if no_gesture_cond:
-                    self.set_gesture_mode(False)
-                    self.acc_values[3] = 0 #Black
-                            
-            else:
-                move_length = np.sum(self.mouvment_state_buff[:,-MIN_GESTURE_DETECTION_SEUIL:])
-                gesture_cond = (move_length == MIN_GESTURE_DETECTION_SEUIL)
-                if gesture_cond:
-                    self.set_gesture_mode(True)
-                    # We add the acceleration values used to switch in gesture mode
-                    for i in range(MIN_GESTURE_DETECTION_SEUIL):
-                        acc = self.acc_buff[:, BUFF_LEN-MIN_GESTURE_DETECTION_SEUIL+i -1]
-                        self.gesture.append(acc)
-                    self.acc_values[3] = 1 #Red
-                    
-                    #TODO : Creat a function to color the MIN_GESTURE_DETECTION_SEUIL
-                    # points who used for the swich in gesture mode
-            
-        else:
-            self.set_gesture_mode(state == 1)
-            
-    def set_gesture_mode(self, mode):
-        """Called when a new change of gesture mode is detected
-        """
-        self.gesture_mode = mode
+        self.gesture = self.manager.acc_treatment.perform(self.acc_values,
+                                                          continuous = True,
+                                                          queue = self.queue)
         
-        if not self.gesture_mode:
+        if self.gesture is not None:
+            #Log.d(self.TAG, "Continuous gesture detected", self.debug)
             self.gesture_database_manager.gesture_recognition(self.gesture)
-            self.gesture = []
-
-            
-    def update_acc_buff(self, acc_values):
-        """Update the acc_buff we the new acceleration.
-        """
-        for i in range(1, BUFF_LEN):
-            self.acc_buff[:, i-1] = self.acc_buff[:, i]
-            
-        self.acc_buff[:, BUFF_LEN-1] = acc_values
-    
-    def update_mouvment_state_buff(self, state):
-        """Update the mouvment_state_buff we the new state.
-        """
-        for i in range(1, STATE_BUFF_LEN):
-            self.mouvment_state_buff[:, i-1] = self.mouvment_state_buff[:, i]
-            
-        self.mouvment_state_buff[:, STATE_BUFF_LEN-1] = state
-        
-        #Log.d(self.TAG, "mouvment_state_buff : %s"%str(self.mouvment_state_buff), self.debug)
+            #self.gesture = []
         
 
-    def _tcheck_mouvment(self):
-        """ We tcheck if there is a mouvment : 
-        1 -> mouvment detected
-        -1 -> no mouvment detected
-        
-        A mouvment is detected if a the same time all the x, y & z acceleration 
-        are above the GESTURE_SEUIL
-        """
-        
-        t_x = np.abs(np.mean(self.acc_buff[0, 0:-1]) - self.acc_buff[0,-1]) < GESTURE_SEUIL
-        t_y = np.abs(np.mean(self.acc_buff[1, 0:-1]) - self.acc_buff[1,-1]) < GESTURE_SEUIL
-        t_z = np.abs(np.mean(self.acc_buff[2, 0:-1]) - self.acc_buff[2,-1]) < GESTURE_SEUIL
-        
-        if t_x and t_y and t_z:
-            # No mouvment is detected
-            return -1 
-        else:
-            # A mouvment is detected
-            return 1
-            
-        
     def _acc_treatment(self, data):
         """ We make sure the accelerometer values are in the good format
         """
@@ -321,3 +288,12 @@ class User(threading.Thread):
     def stop(self):
         self.done = True
         Log.d(self.TAG, "Stop", self.debug)
+        
+class User_Signal_Monitor(threading.Thread): 
+    def __init__(self, queue, user_name = 'bla'): 
+        threading.Thread.__init__(self)
+        self.user_name = user_name
+        self.queue = queue
+
+    def run(self): 
+        Signal_Monitor(self.queue, 500, 900, title = self.user_name).start()
