@@ -1,0 +1,59 @@
+**Projet SI 380 Signal**
+**reconnaissance de mouvement**
+
+Rose Many Bella 
+Quénée Emile
+
+objectif du projet :
+====================
+
+Reconnaissance de mouvement de type chorégraphique
+
+Application : contrôleur gestuel
+
+
+
+Plan : 
+
+I / Problématique
+
+
+Framework
+
+Résultats
+
+Comparaisons
+
+Théorie
+
+Références
+
+Mise en application et implémentation
+
+Segmentation du projet
+
+Pré processing du signal
+
+Reconnaissance du mouvement
+
+Optimisation
+
+
+Détection de mouvement
+
+Reconnaissance de mouvement
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
