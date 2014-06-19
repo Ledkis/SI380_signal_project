@@ -26,8 +26,9 @@ class mLog:
         if first_msg is None:
             first_msg = "<<< %s LOGFILE >>>"%(self.tag)
         
+            log_file = open(self.log_file_name, "w")
         try:
-            log_file  = open(self.log_file_name, "w")
+            
             log_file.write(self.get_time()+" "+first_msg+"\n")
         except:
             print("XXX")
