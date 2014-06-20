@@ -268,7 +268,7 @@ class User(threading.Thread):
                                                           queue = self.queue)
         
         if self.gesture is not None:
-            #Log.d(self.TAG, "Continuous gesture detected", self.debug)
+            Log.d(self.TAG, "%s"%(self.gesture), self.debug)
             self.gesture_database_manager.gesture_recognition(self.gesture)
             #self.gesture = []
         
