@@ -200,9 +200,6 @@ class User(threading.Thread):
                  
                 if self.continuous_mode:
                     self.continuous_recognition()
-                    if self.app_mode:
-                        self.app_mode = False
-                        Log.d(self.TAG, "No apprenntissage in continuous mode", self.debug)
                         
                 else:
                     self.gesture.append(self.acc_values)
@@ -252,7 +249,8 @@ class User(threading.Thread):
                 if self.app_mode:
                     self.gesture_list.append(self.gesture)
                 else:
-                    self.gesture_database_manager.gesture_recognition(self.gesture)
+                    #self.gesture_database_manager.gesture_recognition(self.gesture)
+                    pass
                 # We don't forget to clear the current gesture
                 self.gesture = []
                 
@@ -268,9 +266,18 @@ class User(threading.Thread):
                                                           queue = self.queue)
         
         if self.gesture is not None:
-            Log.d(self.TAG, "%s"%(self.gesture), self.debug)
-            self.gesture_database_manager.gesture_recognition(self.gesture)
+            #print("\n".join([str(i) for i in self.gesture]))
+            m_teta, g_proj = self.gesture[0]
+            Log.d(self.TAG, "New user gesture:\nm_teta = %s; m_g_proj = %s"%(m_teta, g_proj), True)
+            
+            if self.app_mode:
+                self.gesture_list.append(self.gesture)
+                
+            #Log.d(self.TAG, "%s"%(self.gesture), self.debug)
+            #self.gesture_database_manager.gesture_recognition(self.gesture)
             #self.gesture = []
+            #self.gesture_database_manager.print_gesture(self.gesture)
+            
         
 
     def _acc_treatment(self, data):

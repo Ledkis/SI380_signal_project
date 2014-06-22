@@ -79,7 +79,7 @@ class Signal_Monitor(Process):
                     self.surface = pygame.display.set_mode((self.width_px, self.height_px),
                                                            pygame.locals.RESIZABLE)
             try:            
-                sig_val, sig_color = self.queue.get(1/FRAMERATE)
+                sig_val, sig_color = self.queue.get()
                 #Log.d(self.TAG, "queue length : %s"%(self.queue.qsize()), self.debug)
                 self.surface.fill(BACKGROUND_COLOR)
                 
@@ -89,9 +89,6 @@ class Signal_Monitor(Process):
                     traceback.print_exc()
                 
                 pygame.display.flip()
-                
-                del sig_val
-                del sig_color
                 
             except TimeoutError:
                 pass
@@ -214,10 +211,11 @@ if __name__ == "__main__":
     
     
     i = 0
-    while True:
-        time.sleep(1/FRAMERATE)
+    cond = True
+    while cond:
+        time.sleep(1/1000)
         values[0] = i%10
         values[1] = i%10  
-        i +=1
+        i +=0.001
         queue.put((values, colors))
        

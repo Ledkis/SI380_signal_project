@@ -19,6 +19,7 @@ GESTURE_DELIMITER = "============================="
 GESTURE_LIST_DELIMITER = "---------------------------"
 ACC_DELIMITER = "||"
 
+LJUST = 15
 
 class Gesture_database_manager():
     def __init__(self, path, debug = False):
@@ -28,10 +29,11 @@ class Gesture_database_manager():
         self.TAG = "Gesture_database_manager"
         Log.d(self.TAG, "Initialized", self.debug)
         
-        self.gesture_dict = {}
+        self.proto = []
+        self.protolabels = []
+        self.meta_data = []
         
         self.init_from_file()
-        
         self.tcheck_database()
         
         self.last_gesture_name = None
@@ -47,33 +49,14 @@ class Gesture_database_manager():
                 Log.d(self.TAG, "The new gesture '%s' contain no data -> not saved"%gesture_name, self.debug)
                 return
         
-        g_l = []
-        
         for gesture in gesture_list:
-            x_d = []            
-            y_d = []            
-            z_d = []
+            g_meta_data = gesture[0]
+            gesture = np.array(gesture[1:])
             
-            for data in gesture:
-                x_d.append(data[0])
-                y_d.append(data[1])
-                z_d.append(data[2])
-                
-            if not (x_d and y_d and z_d):
-                Log.d(self.TAG, "One of the gesture acc is empty -> Gesture %s not saved"%gesture_name, self.debug)
-                return
-                
-            x_d = np.array(x_d)
-            y_d = np.array(y_d)
-            z_d = np.array(z_d)
-            g = np.array([x_d, y_d, z_d])
+            self.meta_data.append(g_meta_data)
+            self.proto.append(gesture)
+            self.protolabels.append(gesture_name)
             
-            g_l.append(g)
-            
-        g_l = np.array(g_l)
-            
-        self.gesture_dict[gesture_name] = g_l
-        
         
         #self.display_database()
         Log.d(self.TAG, "Nouveau geste appris : %s"%(gesture_name), self.debug)
@@ -215,4 +198,10 @@ class Gesture_database_manager():
     def _set_last_gesture_name(self, gesture_name):
         self.last_gesture_name = gesture_name
         Log.d(self.TAG, "New gesture recognized : %s"%self.last_gesture_name, self.debug)
+        
+    def print_gesture(self, gesture):
+        s = ""
+        for acc in gesture:
+            s = "%s\n%s;"%(s,"".ljust(LJUST).join([str(a) for a in list(acc)]))
+        print(s)
             
