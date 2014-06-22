@@ -14,7 +14,10 @@ import sys
 import time
 import traceback
 import threading
-
+'''
+# cvKmeans module help to recognition optimazation Indeed 
+# instead of going through each element of the dictionary
+import cvKMeans '''
 from multiprocessing import Queue
 
 import numpy as np
@@ -45,7 +48,7 @@ class User_manager():
         self.gesture_database_manager = gesture_database_manager
         
         self.acc_treatment = m_treatment.Data_Treatment()
-        
+
         self.user_list = []
         
         self.debug = debug

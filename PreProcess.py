@@ -16,7 +16,7 @@ def gaussian_kernel(size,sigma):
     x = np.linspace(-size/2, size/2, size)
     g = np.exp(-(x**2) / (2*(sigma**2)))/(np.sqrt(2*np.pi)*sigma)
     g = np.array(g)
-    return g/np.sum(g) 
+    return g/np.sum(g)     
 
 def FIR1(x):
     # Etape : High pass filter for gravity noise reduction
@@ -48,10 +48,7 @@ def FIR2(x):
     std = 1
     g = gaussian_kernel(q,std)
     X2 = np.convolve(g,X1,'same')
-    X2 = X2 / np.sqrt(np.sum(X2**2))
     Y2 = np.convolve(g,Y1,'same')
-    Y2 = Y2 / np.sqrt(np.sum(Y2**2))
     Z2 = np.convolve(g,Z1,'same')
-    Z2 = Z2 / np.sqrt(np.sum(Z2**2))
     
     return X2,Y2,Z2   

@@ -4,7 +4,7 @@ import numpy as np
 import math as mth
 
 # Distance Local Matrix
-def local_dist(T, R, d_eval = lambda x,y : (x-y)**2):
+def local_dist(T, R, d_eval = lambda x,y : np.abs(x-y)):
     # T: Sequence Test; R: Sequence Reference
     n0,m0 = T.shape
     n1,m1 = R.shape
@@ -13,7 +13,7 @@ def local_dist(T, R, d_eval = lambda x,y : (x-y)**2):
     for i in range(n0):
         for j in range(n1):
             f_dist = np.sum(d_eval(T[i],R[j]))
-            d[i,j] = np.sqrt(f_dist)
+            d[i,j] = f_dist#np.sqrt(f_dist)
             
     return d
         
@@ -53,6 +53,7 @@ def Traceback_path(steps):
     i,j = steps.shape
     i = i-1
     j = j-1
+    path.append([i,j])
     # Trace pathback from bottom rigth to top left
     while ((i>0) and (j>0)):
         if (steps[i][j]==0):
@@ -69,7 +70,7 @@ def Traceback_path(steps):
             print 'ERROR'
             
         path.append([i,j])
-    
+    path.append([0,0])
     return path[::-1]
     
 # DTW
