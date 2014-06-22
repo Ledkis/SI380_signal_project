@@ -33,7 +33,7 @@ parms = {"m_acc_l" : 10,
 class Data_Treatment():
     def __init__(self):
         self.debug = True
-        self.c_debug = True
+        self.c_debug = False
         self.queue = None
         
         self.kill_gravity = True
@@ -186,7 +186,7 @@ class Data_Treatment():
     def _eval_gesture_normalized_acc(self):
                     
         self.ge_n_a = self._renorm(self.m_acc, self.ge_rot_mat, self.ge_m_g_proj)
-        Log.d(TAG, "ge_n_a = %s"%(self.ge_n_a), True)
+        Log.d(TAG, "ge_n_a = %s"%(self.ge_n_a), self.c_debug)
         
         self.ge_n_a_buff.update(self.ge_n_a)
         

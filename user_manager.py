@@ -266,7 +266,6 @@ class User(threading.Thread):
                                                           queue = self.queue)
         
         if self.gesture is not None:
-            #print("\n".join([str(i) for i in self.gesture]))
             m_teta, g_proj = self.gesture[0]
             Log.d(self.TAG, "New user gesture:\nm_teta = %s; m_g_proj = %s"%(m_teta, g_proj), True)
             
