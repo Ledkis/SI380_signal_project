@@ -12,6 +12,8 @@ import m_log as Log
 import numpy as np
 import threading
 
+import os
+
 PATH = "gesture_data_base/"
 FILE_NAME = "gesture_data_base.txt"
 
@@ -34,7 +36,7 @@ class Gesture_database_manager():
         self.meta_data = []
         
         self.init_from_file()
-        self.tcheck_database()
+        #self.tcheck_database()
         
         self.last_gesture_name = None
         
@@ -63,63 +65,68 @@ class Gesture_database_manager():
         
         self.save()
         
-    def display_database(self):
-        
-        s = ""
-        for gesture_name in self.gesture_dict.keys():
-            s = "%s--- %s ---\n"%(s,gesture_name)
-            for gesture in self.gesture_dict[gesture_name]:
-                s = "%s%s\n"%(s,"--------------------")
-                for acc_data in gesture:
-                    for acc in acc_data:
-                        s = "%s%s;"%(s,acc_data) 
-                   
-        Log.d(self.TAG, "Gesture data base :\n%s"%s, self.debug)
-        
-        
     def __str__(self):
         s = ""
-        for gesture_name in self.gesture_dict.keys():
-            s = "%s%s\n%s\n"%(s,GESTURE_DELIMITER,gesture_name)
-            for gesture in self.gesture_dict[gesture_name]:
-                s = "%s%s\n"%(s,GESTURE_LIST_DELIMITER)
-                for acc_data in gesture:
-                    for acc in acc_data:
-                        s = "%s%s;"%(s,acc) 
-                    s = "%s||\n"%s
+        for i in range(len(self.proto)):
+            g_name = self.protolabels[i]
+            g = self.proto[i]
+            s += self.gesture_to_string(g_name, g)
         return s
+        
+    def gesture_to_string(self, g_name, gesture):
+        return "%s\n%s\n"%(g_name, self.g_acc_to_string(gesture))
+        
+    def g_acc_to_string(self, gesture):
+        gesture = gesture.T
+        return "\n".join([";".join([str(acc) for acc in v_acc]) for v_acc in gesture])
         
     def save(self):
         file = open(PATH+FILE_NAME, "w")
         file.write(str(self))
         file.close()
         
+        for i in range(len(self.proto)):
+            g_name = self.protolabels[i]
+            g = self.proto[i]
+            file = open(PATH+g_name+".txt", "w")
+            file.write(self.gesture_to_string(g_name, g))
+            file.close()
+        
         Log.d(self.TAG, "Data base saved", self.debug)
         
     def init_from_file(self):
-        file = open(PATH+FILE_NAME, "r").read().replace("\n", "")
+        def to_float_list(l):
+            return np.array([float(i) for i in l])        
         
-        gesture_list = file.split(GESTURE_DELIMITER)[1:]
-        
-        for gesture_info in gesture_list:
-            gesture_info = gesture_info.split(GESTURE_LIST_DELIMITER)
-            gesture_name = gesture_info[0]
-            g_l = []
-            for gesture_list in gesture_info[1:-1]:
-                gesture = gesture_list.split(ACC_DELIMITER)
-
-                def to_float_list(l):
-                    return np.array([float(i) for i in l])
-                
-                x = to_float_list(gesture[0].split(";")[:-1])
-                y = to_float_list(gesture[1].split(";")[:-1])
-                z = to_float_list(gesture[2].split(";")[:-1])
-                
-                g = np.array([x, y, z])
-                g_l.append(g)
-            g_l = np.array(g_l)
+        for file_name in os.listdir(PATH):
+            if file_name != FILE_NAME:
+                self.protolabels.append(file_name)
+                file = open(PATH+file_name, "r").read().split("\n")[:-1]
+                a_x = to_float_list(file[1].split(";"))
+                a_y = to_float_list(file[2].split(";"))
+                a_z = to_float_list(file[3].split(";"))
             
-            self.gesture_dict[gesture_name] = g_l
+                gesture = np.array([a_x, a_y, a_z]).T
+                self.proto.append(gesture)
+                
+            
+#        def to_float_list(l):
+#            return np.array([float(i) for i in l])        
+#        
+#        file = open(PATH+FILE_NAME, "r").read().split("\n")[:-1]
+#        
+#        l = int(len(file)/4)
+#        
+#        for i in range(0, l, 4):
+#            self.protolabels.append(file[i])
+#            
+#            a_x = to_float_list(file[i+1].split(";"))
+#            a_y = to_float_list(file[i+2].split(";"))
+#            a_z = to_float_list(file[i+3].split(";"))
+#            
+#            gesture = np.array([a_x, a_y, a_z]).T
+#            self.proto.append(gesture)
+            
             
     def tcheck_database(self):
         """See if there is not appropriate gesture.
@@ -174,19 +181,6 @@ class Gesture_database_manager():
            Log.d(self.TAG, "No data in gesture : ", self.debug)
            return 
             
-        x_d = []            
-        y_d = []            
-        z_d = []
-        
-        for data in gesture:
-            x_d.append(data[0])
-            y_d.append(data[1])
-            z_d.append(data[2])
-            
-        x_d = np.array(x_d)
-        y_d = np.array(y_d)
-        z_d = np.array(z_d)
-        g = np.array([x_d, y_d, z_d])
         
         def perform_recognition(self, gesture_dict, gesture):
             gesture_name = dtw.multi_d_multi_key_dtw(gesture_dict, gesture)
