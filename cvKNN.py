@@ -25,12 +25,44 @@ def Data_design(A,debug=False):
             if len(R) == 0:
                 log.d("[Data_design]", 'Error empty Class', debug)
                 return None
-    return (labels, Proto, Protoclass)
+    return (Proto, Protoclass)
+
+def Clustering(Centroid, Cluster, A, Proto, Protoclass):
+    indx = MinInd(A,Centroid)
+    T = np.nonzero(Cluster==indx)
+    T = T[1]
+
+    Prot = []
+    Protclass = []    
+    if len(T):
+        for i in range(len(T)):
+            d = T[i]
+            Prot.append(Proto[d])
+            Protclass.append(Protoclass[d])
+
+    return (Prot, Protclass)
+
+def MinInd(X,Centr):
+    d_min = []
+    h = len(Centr)
+    m,n = np.shape(X)
+    for i in range(h):
+        m1,n1 = np.shape(Centr[i])
+        r = np.fabs(np.fabs(m-m1) - min(m,m1))# this value Need to study for better results
+        dm,pth,dis = cv.DTW(X, Centr[i], r)
+        d_min.append(dm)
+    ind = np.argmin(d_min)
+    return ind
 
 # K-NN ~1-KNN
-def K_NN(X, A, K, debug = False):    
+def K_NN(X, Proto, Protoclass, K, Centroid=None, Cluster=None, debug = False):
+    
+    # Optimization option
+    if Centroid != None and Cluster != None :
+        Proto,Protoclass = Clustering(Centroid,Cluster,X,Proto,Protoclass)
+    
     # Data laoding
-    labels, Proto, Protoclass = Data_design(A,True)
+    labels = np.unique(Protoclass)
     d_min = []
     h = len(Proto)
     m,n = np.shape(X)
@@ -38,7 +70,7 @@ def K_NN(X, A, K, debug = False):
     # Calcul, distances min
     for i in range(h):
         m1,n1 = np.shape(Proto[i])
-        r = np.fabs(np.fabs(n-n1) - min(n,n1))# this value Need to study for better results
+        r = np.fabs(np.fabs(m-m1) - min(m,m1))# this value Need to study for better results
         dm,pth,dis = cv.DTW(X, Proto[i], r)
         mydict.append((Protoclass[i],dm))
         d_min.append(dm)
@@ -50,10 +82,14 @@ def K_NN(X, A, K, debug = False):
         # Classification
         S = sorted(mydict, key=lambda t:t[1])
         S = S[0:K]
+        T = np.transpose(S)
+        print T[0]
         nClass = len(labels)
+        print nClass
         classcount = []
         for i in range(nClass):
-            x = map(lambda j: labels[i]==j, S[0])
+            x = map(lambda j: labels[i]==j, T[0])
+            print x
             classcount.append(np.sum(x))
         Xclass = np.argmax(classcount)
         Xclass = labels[Xclass]
