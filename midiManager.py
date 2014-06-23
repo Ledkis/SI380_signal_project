@@ -8,7 +8,6 @@ Created on 23 sept. 2013
 import m_log as Log
 
 import midiConnexion 
-import operator
 
 
 

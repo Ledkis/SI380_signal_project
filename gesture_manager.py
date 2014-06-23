@@ -18,25 +18,22 @@ import os
 PATH = "gesture_data_base/"
 FILE_NAME = "gesture_data_base.txt"
 
+MIDI_PRESET_FILE = "midi_preset/midi_preset.txt"
+
 GESTURE_DELIMITER = "============================="
 GESTURE_LIST_DELIMITER = "---------------------------"
 ACC_DELIMITER = "||"
 
 LJUST = 15
 
-gesture_to_midi_hm = {'lf' : 60,
-                      'rf' : 61, 
-                      'g' : 62, 
-                      'r' : 63}                      
-MIDI_OFFSET = 64
+FIRST_NOTE = 60
 
 class Gesture_database_manager():
     def __init__(self, path, debug = False):
-        self.path = path
-        
         self.debug = debug
         self.TAG = "Gesture_database_manager"
-        Log.d(self.TAG, "Initialized", self.debug)
+        
+        self.path = path
         
         self.proto = []
         self.protoclass = []
@@ -49,14 +46,52 @@ class Gesture_database_manager():
         
         #TODO : Temporaire, revoir cette architecture
         self.midi_manager = midiManager.MidiManager()
+        self.init_midi_preset()
         self.update_midi_gesture_mapping()
         
         self.last_gesture_name = None
         
+        self.debug = debug
+        self.TAG = "Gesture_database_manager"
+        
+        Log.d(self.TAG, "Initialized", self.debug)
+        
+    def new_midi_gesture_mapping(self, gesture_name):
+        try:
+            int(self.midi_preset[gesture_name])
+            Log.d(self.TAG, "The gesture %s is already in the midi preset"%gesture_name, self.debug)
+        except KeyError:
+            midi_notes = sorted(self.midi_preset.values())
+            if len(midi_notes) == 0:
+                self.midi_preset[gesture_name] = FIRST_NOTE
+            else : 
+                init = False
+                first_note = midi_notes[0]
+                print(midi_notes)
+                for i in range(len(midi_notes)):
+                    if (i + first_note) != midi_notes[i]:
+                        self.midi_preset[gesture_name] = i
+                        init = True
+                if not init:
+                    self.midi_preset[gesture_name] = len(midi_notes)
+            self.save_midi_preset()
+    
     def update_midi_gesture_mapping(self):
-        g_name_list = sorted(set(self.protoclass))
-        for i in range(len(g_name_list)):
-            gesture_to_midi_hm[g_name_list[i]] = MIDI_OFFSET + i
+        for g_name in sorted(set(self.protoclass)): 
+            self.new_midi_gesture_mapping(g_name)
+            
+    
+    def save_midi_preset(self):
+        file = open(MIDI_PRESET_FILE, "w")
+        file.write("\n".join(["%s;%s"%(el, self.midi_preset[el]) for el in self.midi_preset.keys()]))
+        file.close()
+        
+        Log.d(self.TAG, "Midi preset saved", self.debug)
+        
+    def init_midi_preset(self):
+        self.midi_preset = dict((lambda x: (x[0], int(x[1])))(el.split(";")) 
+                        for el in open(MIDI_PRESET_FILE, "r").read().split("\n") 
+                        if el.split(";") != '')
             
         
     def new_gesture(self, gesture_name, gesture_list):
@@ -82,7 +117,7 @@ class Gesture_database_manager():
             file.write(self.gesture_to_string(gesture_name, gesture))
             file.close()
             
-        self.update_midi_gesture_mapping()
+        self.new_midi_gesture_mapping(gesture_name)
             
         
         Log.d(self.TAG, "Nouveau geste appris et sauvé : %s\nProto nbr = %s"%(gesture_name, len(self.proto)), self.debug)
@@ -168,7 +203,7 @@ class Gesture_database_manager():
         
         def perform_recognition(self, gesture, proto, protoclass, k):
             gesture_name = cvKNN.K_NN(gesture, proto, protoclass, k)
-            midi_note = gesture_to_midi_hm[gesture_name]
+            midi_note = self.midi_preset[gesture_name]
             self.midi_manager.midiConnexion.send_Note_On(note = midi_note)
             self.midi_manager.midiConnexion.send_Note_Off(note = midi_note)
             self._set_last_gesture_name(gesture_name)
