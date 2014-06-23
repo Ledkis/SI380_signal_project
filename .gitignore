@@ -53,5 +53,5 @@ coverage.xml
 docs/_build/
 
 # Applicaton
-gesture_data_base/gesture_data_base.txt
+gesture_data_base/
 
