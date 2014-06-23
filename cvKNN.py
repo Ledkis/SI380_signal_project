@@ -6,6 +6,10 @@ import m_log as log
 import numpy as np
 import cvDTW as cv
 
+import sys
+if sys.version_info < (3,):
+    range = xrange
+
 # Data design
 def Data_design(A,debug=False):
     labels = A.keys()
@@ -16,12 +20,12 @@ def Data_design(A,debug=False):
     Proto = []
     Protoclass = []    
     if len(labels):
-        for i in range(len(labels)):
-            R = A[labels[i]]
+        for i in labels:
+            R = A[i]
             if len(R):
-                for j in range(len(R)):
-                    Proto.append(R[j])
-                    Protoclass.append(labels[i])
+                for j in R:
+                    Proto.append(j)
+                    Protoclass.append(i)
             if len(R) == 0:
                 log.d("[Data_design]", 'Error empty Class', debug)
                 return None
@@ -31,25 +35,21 @@ def Clustering(Centroid, Cluster, A, Proto, Protoclass):
     indx = MinInd(A,Centroid)
     T = np.nonzero(Cluster==indx)
     T = T[1]
-
-    Prot = []
-    Protclass = []    
+    
     if len(T):
-        for i in range(len(T)):
-            d = T[i]
-            Prot.append(Proto[d])
-            Protclass.append(Protoclass[d])
+        Prot= [Proto[i]for i in T]
+        Protclass = [Protoclass[i] for i in T]
 
     return (Prot, Protclass)
 
 def MinInd(X,Centr):
     d_min = []
-    h = len(Centr)
+    #h = len(Centr)
     m,n = np.shape(X)
-    for i in range(h):
-        m1,n1 = np.shape(Centr[i])
+    for i in Centr:
+        m1,n1 = np.shape(i)
         r = np.fabs(np.fabs(m-m1) - min(m,m1))# this value Need to study for better results
-        dm,pth,dis = cv.DTW(X, Centr[i], r)
+        dm,pth,dis = cv.DTW(X, i, r)
         d_min.append(dm)
     ind = np.argmin(d_min)
     return ind
@@ -58,7 +58,7 @@ def MinInd(X,Centr):
 def K_NN(X, Proto, Protoclass, K, Centroid=None, Cluster=None, debug = False):
     
     # Optimization option
-    if Centroid != None and Cluster != None :
+    if Centroid is not None and Cluster is not None :
         Proto,Protoclass = Clustering(Centroid,Cluster,X,Proto,Protoclass)
     
     # Data loading
@@ -83,10 +83,13 @@ def K_NN(X, Proto, Protoclass, K, Centroid=None, Cluster=None, debug = False):
         S = sorted(mydict, key=lambda t:t[1])
         S = S[0:K]
         T = np.transpose(S)
+        #print T[0]
         nClass = len(labels)
+        #print nClass
         classcount = []
         for i in range(nClass):
-            x = list(map(lambda j: labels[i]==j, T[0]))
+            x = map(lambda j: labels[i]==j, T[0])
+            #print x
             classcount.append(np.sum(x))
         Xclass = np.argmax(classcount)
         Xclass = labels[Xclass]

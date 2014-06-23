@@ -3,18 +3,20 @@
 import numpy as np
 import math as mth
 
+import sys
+if sys.version_info < (3,):
+    range = xrange
+
 # Distance Local Matrix
-def local_dist(T, R, d_eval = lambda x,y : np.abs(x-y)):
+def local_dist(T, R):
     # T: Sequence Test; R: Sequence Reference
     n0,m0 = T.shape
     n1,m1 = R.shape
     d = np.zeros((n0,n1))    
     # Calcul matrice
     for i in range(n0):
-        for j in range(n1):
-            f_dist = np.sum(d_eval(T[i],R[j]))
-            d[i,j] = f_dist#np.sqrt(f_dist)
-            
+        D = np.abs(R-T[i])
+        d[i] = np.sum(D,axis=1)            
     return d
         
 # Global Distance Matrix
