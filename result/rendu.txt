@@ -1,4 +1,4 @@
-**Projet SI 380 Signal**
+﻿**Projet SI 380 Signal**
 **reconnaissance de mouvement**
 
 Rose Many Bella 
@@ -42,6 +42,36 @@ Optimisation
 Détection de mouvement
 
 Reconnaissance de mouvement
+
+
+
+
+L'objectif étant de faire de la reconnaissance en continue : on lance une fois l'acquisition des données de l'accéléromètre et c'est ensuite au programme de dire si oui ou non un mouvement est détecté.
+
+
+
+Détection de mouvement
+=======================
+
+Les données mesurées sont celles de l'accéléromètre. Cette accélération mesurées contient deux composantes qui se superposent : 
+- la projection de l'accélération de la pesanteur dans le référentiel de l'accéléromètre
+- l'accélération du déplacement de l'accéléromètre : c'est celle si qui nous intéresse
+
+On concidère que l'accéléromètre peut se trouver dans deux états : 
+- Au repos, et on a alors
+- En mouvement
+
+Egalement nous nous imposons les contraintes suivantes :
+- nous voulons être invariant par rotation autour de l'axe teta, ce qui correspond pour le smartphone en main à une rotation du poignet
+- Nous ne voulons mesurer que le déplacement du smartphone, c'est enlever le vecteur d'accélération de la pesanteur de nos mesures
+
+Pour se faire nous allons procéder en deux temps : 
+- lorsque l'accéléromètre et au repos on va chercher à déterminer l'angle de rotation autour  de l'axe y, ainsi que la projection du vecteur g
+- lorsque l'accéléromètre est en mouvement, on va mesurer l'l
+
+
+Le premier enjeu est de savoir quand est ce que l'accéléromètre est en mouvement
+Ceci va être fait à partir de la norme du vecteur d'accélération : lorsque l
 
 
 
