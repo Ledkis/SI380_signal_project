@@ -8,6 +8,10 @@ Created on Wed Jun 18 16:30:29 2014
 import cvDTW
 import numpy as np
 
+import sys
+if sys.version_info < (3,):
+    range = xrange
+
 def isRand(Proto,k):
     # h = len(Proto)
     #d = np.random.permutation(h)
@@ -28,11 +32,11 @@ def DistMat(A,B):
     h = len(A)
     D = np.zeros((h,c))
     C = B
-    for j in xrange(h):
+    for j in range(h):
         m1,n1 = np.shape(A[j])
         Dc = []
         P = []
-        for i in xrange(c):
+        for i in range(c):
             m,n = np.shape(B[i])
             r = np.fabs(np.fabs(n-n1) - min(n,n1))
             d_min,p,d = cvDTW.DTW(A[j],B[i],r)
@@ -50,7 +54,7 @@ def Centroid(C,B,path):
     path = np.array(path)
     m = len(path)
     nC = C
-    for i in xrange(m):
+    for i in range(m):
         nC[path[i][1]] = (nC[path[i][1]] + B[path[i][0]])/2
     return nC
             
