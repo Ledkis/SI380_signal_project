@@ -61,7 +61,7 @@ def K_NN(X, Proto, Protoclass, K, Centroid=None, Cluster=None, debug = False):
     if Centroid != None and Cluster != None :
         Proto,Protoclass = Clustering(Centroid,Cluster,X,Proto,Protoclass)
     
-    # Data laoding
+    # Data loading
     labels = np.unique(Protoclass)
     d_min = []
     h = len(Proto)
@@ -83,13 +83,10 @@ def K_NN(X, Proto, Protoclass, K, Centroid=None, Cluster=None, debug = False):
         S = sorted(mydict, key=lambda t:t[1])
         S = S[0:K]
         T = np.transpose(S)
-        print T[0]
         nClass = len(labels)
-        print nClass
         classcount = []
         for i in range(nClass):
-            x = map(lambda j: labels[i]==j, T[0])
-            print x
+            x = list(map(lambda j: labels[i]==j, T[0]))
             classcount.append(np.sum(x))
         Xclass = np.argmax(classcount)
         Xclass = labels[Xclass]

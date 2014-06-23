@@ -67,7 +67,7 @@ def Traceback_path(steps):
             # Antecedent D(i-1,j)
             i = i - 1
         else:
-            print 'ERROR'
+            print('ERROR')
             
         path.append([i,j])
     path.append([0,0])
