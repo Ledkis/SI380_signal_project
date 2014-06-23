@@ -26,19 +26,6 @@ G_CONST = 9.81
 
 # Space between for the information for log
 SPACE = 15
-# Length of the buffer witch contains the accelerometers values
-BUFF_LEN = 15
-# Length of the mouvment state buffer 
-STATE_BUFF_LEN = 10
-
-NORM_BUFF_LEN = 15
-
-# Seuil under witch we say there is no movement
-GESTURE_SEUIL = 0.8
-# Min number of consecutive 1 mouvment state for switching in gesture mode
-MIN_GESTURE_DETECTION_SEUIL = 5
-# Min number of consecutive -1 mouvment state for switching in not gesture mode
-MIN_NO_GESTURE_DETECTION_SEUIL = 5
 
 class User_manager():
     """Class for managing users.
@@ -102,7 +89,7 @@ class User(threading.Thread):
             # The continuous mode is when the application guess by itself if
             # a gesture is currently being performed or not. It's not the user
             # who say anymore if he perform a gesture or not
-        self.continuous_mode = False
+        self.continuous_mode = True
         
         # Represent if the user is working or not
         self.done = False
@@ -123,22 +110,11 @@ class User(threading.Thread):
     def run(self):
         
         
-        # Buffer witch contains the last BUFF_LEN accelerometer values
-        self.acc_buff = m_buffer.Buff(3, BUFF_LEN)
-        
-        self.norm_buff = m_buffer.Buff(1, BUFF_LEN)        
-        self.norm_2_buff = m_buffer.Buff(1, BUFF_LEN)        
-        self.norm_3_buff = m_buffer.Buff(1, BUFF_LEN)        
-        self.v_x_buff = m_buffer.Buff(1, BUFF_LEN)        
-        self.x_p_buff = m_buffer.Buff(1, BUFF_LEN)        
-        
         # List witch contains the accelerometer values of the gesture currently performed gesture
         self.gesture = []
         # List witch contains the list of gesture associated to a new gesture
         # in apprentissage mode
         self.gesture_list = []
-        # Buffer witch contains the last STATE_BUFF_LEN mouvment state
-        self.mouvment_state_buff = np.zeros((1, STATE_BUFF_LEN))
         
         # Reference to the accelerometer value x, y, z
         self.acc_values  = [0, 0, 0]
@@ -147,9 +123,6 @@ class User(threading.Thread):
         self.sig_val = []
         # Represent the color of the displayed signals.
         self.sig_colors  = []
-        
-        
-        self.queue.put((self.sig_val, self.sig_colors))
         
         import test_display
         test_display.launch_pyg(self.queue)
@@ -195,10 +168,10 @@ class User(threading.Thread):
                         self.acc_values[1] = y
                         self.acc_values[2] = z
                     else :
-                        Log.d(self.TAG, "[ERROR] data not complete : %s"%(data), self.debug)
+                        Log.d(self.TAG, "[ERROR] data not complete : %s"%(data), False)
                 except:
-                    Log.d(self.TAG, "[ERROR] While _acc_treatment : %s"%(sys.exc_info()[0]), self.debug)
-                    traceback.print_exc()
+                    Log.d(self.TAG, "[ERROR] While _acc_treatment : %s"%(sys.exc_info()[0]), False)
+                    #traceback.print_exc()
                     return
                  
                 if self.continuous_mode:
@@ -210,8 +183,6 @@ class User(threading.Thread):
                     self.sig_colors = [1]*3 #Red
                     self.queue.put((self.sig_val, self.sig_colors))                    
                                         
-                    #self._display_acc(self.acc_values, "[%s]"%msg)
-                
             # When we switch in apprentissage mode
             if msg == "start_app":
                self.app_mode = True
@@ -220,7 +191,7 @@ class User(threading.Thread):
             # When we quit apprentissage mode
             if msg == "end_app":
                 
-                gesture_name = data[1]
+                gesture_name = data[1].strip().lower()
                 
                 # We add a new gesture in the gesture data base
                 self.gesture_database_manager.new_gesture(gesture_name, self.gesture_list)
@@ -228,6 +199,8 @@ class User(threading.Thread):
                 self.gesture = []
                 # We clear the gestures
                 self.gesture_list = []
+                
+                
 
                 self.app_mode = False
                 Log.d(self.TAG, "Fin apprentissage, gesture name = %s"%gesture_name, self.debug)
@@ -248,15 +221,9 @@ class User(threading.Thread):
             if msg == "end_data":
                 self.sig_colors = [0]*3 #Black
                 Log.d(self.TAG, "End data", self.debug)
-                # We tcheck if we where in app mode or not
-                if self.app_mode:
-                    self.gesture_list.append(self.gesture)
-                else:
-                    #self.gesture_database_manager.gesture_recognition(self.gesture)
-                    pass
+                
                 # We don't forget to clear the current gesture
                 self.gesture = []
-                
                 # We clear the queue
                 while not self.queue.empty():
                     self.queue.get()
@@ -274,14 +241,9 @@ class User(threading.Thread):
             
             if self.app_mode:
                 self.gesture_list.append(self.gesture)
+            else:
+                self.gesture_database_manager.gesture_recognition(np.array(self.gesture[1:]))
                 
-            #Log.d(self.TAG, "%s"%(self.gesture), self.debug)
-            #self.gesture_database_manager.gesture_recognition(self.gesture)
-            #self.gesture = []
-            #self.gesture_database_manager.print_gesture(self.gesture)
-            
-        
-
     def _acc_treatment(self, data):
         """ We make sure the accelerometer values are in the good format
         """
@@ -290,10 +252,6 @@ class User(threading.Thread):
         return (x, y, z)
             
     
-    def _display_acc(self, acc_values, mode = ""):
-        Log.d(self.TAG, "%s%s"%(mode.ljust(SPACE), "".join([str(i).ljust(SPACE) for i in acc_values])), self.debug)
-            
-        
     def stop(self):
         self.done = True
         Log.d(self.TAG, "Stop", self.debug)
