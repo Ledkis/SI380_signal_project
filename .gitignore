@@ -55,3 +55,6 @@ docs/_build/
 # Applicaton
 gesture_data_base/
 
+# Word
+~$*.docx
+
