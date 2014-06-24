@@ -5,6 +5,11 @@ Created on Mon Jun 16 14:21:15 2014
 @author: Utilisateur
 """
 
+# TODO :
+#	Enlever le lissage sur la norme et sur teta
+#	Quantifier le mouvement en sortie pour augmenter la vitesse de détection
+
+
 from m_buffer import Buff, dim_mean, dim_sum
 import m_log as Log
 
@@ -91,9 +96,11 @@ class Data_Treatment():
         self.m_freq = 0
         self.freq_buff = Buff(1, FREQ_LEN_DATA)
         
+        self.test = 0
+        
         self.pic_p = np.array([0, 0]) #Val, color
         self.delayed_m_n_norm_buf = Buff(2, MAX_GESTURE_LENGTH)
-        self.monitored_attr_names = ["m_n_norm"]
+        self.monitored_attr_names = ["test"]
         self.sig_color = [0]
         
         self.debug = True
@@ -101,6 +108,7 @@ class Data_Treatment():
         self.queue = None
         
     def _monitor(self, sig_val, sig_color):
+        self.test = np.sqrt(self.acc[0]**2+self.acc[1]**2+self.acc[2]**2) - G_CONST
         if self.queue is not None:
             self.queue.put((sig_val, sig_color))
             
@@ -269,7 +277,15 @@ class Data_Treatment():
                     self.last_max_pic - self.last_min_pic > self.decc_seuil:
                         
                     Log.d(TAG, "Decc detected !", self.debug)
+                    
+                    tmp_ge_m_teta = self.ge_m_teta
+                    tmp_ge_m_g_proj = self.ge_m_g_proj
+                    
                     self._set_gesture_state(False)
+                    
+                    self.ge_m_teta = tmp_ge_m_teta
+                    self.ge_m_g_proj = tmp_ge_m_g_proj
+                    
                     decc_detected = True
             
             if (self.m_n_norm > self.last_m_n_norm):
