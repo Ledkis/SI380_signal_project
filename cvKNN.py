@@ -88,9 +88,8 @@ def K_NN(X, Proto, Protoclass, K, Centroid=None, Cluster=None, debug = False):
         #print nClass
         classcount = []
         for i in range(nClass):
-            x = map(lambda j: labels[i]==j, T[0])
-            #print x
+            x = list(map(lambda j: labels[i]==j, T[0]))
             classcount.append(np.sum(x))
-        Xclass = np.argmax(classcount)
+        Xclass = np.argmax(np.array(classcount))
         Xclass = labels[Xclass]
     return Xclass         
