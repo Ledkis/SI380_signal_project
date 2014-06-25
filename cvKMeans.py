@@ -8,17 +8,14 @@ Created on Wed Jun 18 16:30:29 2014
 import cvDTW
 import numpy as np
 
-def isRand(Proto,k):
-    # h = len(Proto)
-    #d = np.random.permutation(h)
+def isRand(Proto,Protoclass,k):
     # To be sure of the initialization we can select data that we will introduce
     # as centroid in each class
-    a = 0 
-    d = [a+1, a+4, a+8, a+12]
-    D = d[:k]
-    C = []
-    for i in D:
-       C.append(Proto[i]) 
+    Protoclass = np.array(Protoclass)
+    label = list(set(Protoclass))
+    V = (np.nonzero(Protoclass==i)[0] for i in label)
+    D = (j[0] for j in V)
+    C = [Proto[i] for i in D]
     C = np.array(C)
     return C   
 
@@ -29,13 +26,10 @@ def DistMat(A,B):
     D = np.zeros((h,c))
     C = B
     for j in xrange(h):
-        m1,n1 = np.shape(A[j])
         Dc = []
         P = []
         for i in xrange(c):
-            m,n = np.shape(B[i])
-            r = np.fabs(np.fabs(n-n1) - min(n,n1))
-            d_min,p,d = cvDTW.DTW(A[j],B[i],r)
+            d_min,p,d = cvDTW.DTW(A[j],B[i])
             Dc.append(d_min)
             P.append(p)
             D[j][i]=d_min 
@@ -54,9 +48,9 @@ def Centroid(C,B,path):
         nC[path[i][1]] = (nC[path[i][1]] + B[path[i][0]])/2
     return nC
             
-def kmeans(dataset, k):
+def kmeans(dataset,labels, k):
     # centroid initialization
-    C = isRand(dataset,k)
+    C = isRand(dataset,labels,k)
     # Main loop
     me = 1
     h = len(dataset)

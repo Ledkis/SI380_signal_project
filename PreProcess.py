@@ -25,7 +25,7 @@ def FIR1(x):
     Y = np.array([row[1] for row in x])
     Z = np.array([row[2] for row in x])
     
-    m,n = np.shape(x) 
+    m = len(x) 
     
     X = np.array(X) - np.mean(X)
     Y = np.array(Y) - np.mean(Y)
@@ -33,7 +33,7 @@ def FIR1(x):
     X1,Y1,Z1 = X,Y,Z
     
     # high pass filter
-    for i in range(m-1):
+    for i in xrange(m-1):
         X1[i+1] = factor*(X[i+1] - X[i]) + factor*X1[i]
         Y1[i+1] = factor*(Y[i+1] - Y[i]) + factor*Y1[i]
         Z1[i+1] = factor*(Z[i+1] - Z[i]) + factor*Z1[i]

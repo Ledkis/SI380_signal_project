@@ -43,6 +43,31 @@ def global_dist(d, window_warping_adjustment, warp = lambda x,y,w,s : mth.fabs(x
     D = np.delete(D,0,0)
     D = np.delete(D,0,1)
     return (D, steps)
+
+# Global Distance Matrix
+def global_dist1(d, window_warping_adjustment, warp = lambda x,y,w,s : mth.fabs(x -(y/s))>w  ):
+    # Initialisation
+    r = window_warping_adjustment # Adjustement window size
+    m,n = d.shape
+    D = np.ones((m+1, n+1))
+    D = np.Inf*D
+    D[0][0] = d[0][0] # Initial Condition
+    slp = n/float(m) # La pente de (0,0) a (m,n)
+    
+    for i in xrange(m):
+        for j in xrange(n):
+            if (warp(i,j,r,slp)):
+                continue
+            # Calculate global distance
+            t = [D[i+1,j] + d[i,j], D[i,j] + 2*d[i,j], D[i,j+1] + d[i,j]]
+            D[i+1,j+1] = np.min(t)
+            
+    # Time normalize global distance
+    D = D/(m + n)
+    # Remove the 1st element
+    D = np.delete(D,0,0)
+    D = np.delete(D,0,1)
+    return D
     
 # Recherche chemin optimal
 def Traceback_path(steps):
@@ -72,10 +97,21 @@ def Traceback_path(steps):
     return path[::-1]
     
 # DTW
-def DTW(T, R, window_warping_adjustement):
+def DTW(T, R):
+    m1 = len(R)
+    m = len(T)
     d = local_dist(T,R)
-    r = window_warping_adjustement
+    r = np.fabs(np.fabs(m-m1) - min(m,m1))
     D, steps = global_dist(d,r)
     path = Traceback_path(steps)
     min_D = D[-1][-1]
-    return (min_D, path, D)                
+    return (min_D, path, D)   
+
+def DTW1(T, R):
+    m1 = len(R)
+    m = len(T)
+    d = local_dist(T,R)
+    r = np.fabs(np.fabs(m-m1) - min(m,m1))
+    D = global_dist1(d,r)
+    min_D = D[-1][-1]
+    return min_D                
