@@ -58,8 +58,10 @@ class features():
         for i in xrange(self.nrecs):
             M.append([np.mean(self.X[j:ws+j]),np.mean(self.Y[j:ws+j]),np.mean(self.Z[j:ws+j])])
             j = j + self.nadv
+        #M = quantvect(np.array(M))
         M = np.array(M)
-        M = quantvect(M)/(np.max(M) - np.min(M))
+        #M = quantvect(M)/(np.max(M) - np.min(M))
+        M = M/(np.max(M) - np.min(M))
         return M
         
     def feat_Deviation(self):
@@ -111,8 +113,17 @@ class features():
         E = np.array(E)
         E = E/(np.max(E) - np.min(E))
         return E
-    
+        
+    def mean_nrj(self):
+        m = self.feat_Mean()
+        nrj = self.feat_frequency()
+        n = len(m)
+        data = np.array([[m[i][0],m[i][1],m[i][2],nrj[i][0],nrj[i][1],
+                         nrj[i][2]] for i in xrange(n)])
+        return data
+        
     def features_extract(self):
         self.Mean = self.feat_Mean()       
         #self.Dev = self.feat_Deviation()
-        self.E = self.feat_frequency()
+        #self.E = self.feat_frequency()
+        #self.param = self.mean_nrj()
